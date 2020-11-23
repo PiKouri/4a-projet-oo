@@ -1,10 +1,16 @@
 import java.util.Date;
 
 public class Message {
+	
+/*---------------------------Attributs---------------------------*/
+	
 	private int size;
 	private Date date;
+	private User sender;
+	private User receiver;
 	
-	// Get
+	
+/*---------------------------Getteurs---------------------------*/
 	
 	public int getSize() {
 		return this.size;
@@ -14,13 +20,23 @@ public class Message {
 		return this.date;
 	}
 	
-	// Set
+	public User getSender() {
+		return this.sender;
+	}
+	
+	public User getReceiver() {
+		return this.receiver;
+	}
+	
+	
+	
+/*---------------------------Setters---------------------------*/
 	
 	public void setDate(Date date) {
 		this.date = date;
 	}
 	
-	// Check type
+/*---------------------------Check type---------------------------*/
 	
 	public boolean isFile(){
 		return (this instanceof File);
