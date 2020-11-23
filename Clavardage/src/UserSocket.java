@@ -1,3 +1,6 @@
+import java.net.Socket;
+import java.util.Date;
+
 public class UserSocket extends Subject {
 	
 /*-----------------------Attributs-------------------------*/
@@ -10,7 +13,7 @@ public class UserSocket extends Subject {
 	
 	
 	public User getUser() {
-		
+		return new User();
 	}
 	
 /*-----------------------Méthodes-------------------------*/

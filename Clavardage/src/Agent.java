@@ -1,3 +1,4 @@
+import java.net.Socket;
 import java.util.ArrayList;
 
 public class Agent extends Subject {
@@ -5,15 +6,15 @@ public class Agent extends Subject {
 	private MyMap<User,MessageEmissionObserver> mapObserver;
 	
 	public boolean chooseUsername(String name) {
-		
+		return true;
 	}
 	
 	public ArrayList<String> viewActiveUsernames(){
-		
+		return new ArrayList<String>(1);
 	}
 	
 	public ArrayList<Message> getMessageHistory(String username){
-		
+		return new ArrayList<Message>(1);
 	}
 	
 	public void sendMessage(Message message) {
@@ -21,7 +22,7 @@ public class Agent extends Subject {
 	}
 	
 	private User nameResolve(String username) {
-		
+		return new User();
 	}
 	
 	private void checkUsernameAvailability(String username) {
