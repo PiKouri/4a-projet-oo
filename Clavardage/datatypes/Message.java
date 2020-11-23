@@ -1,3 +1,4 @@
+import java.util.Date;
 
 public class Message {
 	private int size;
@@ -21,19 +22,19 @@ public class Message {
 	
 	// Check type
 	
-	public bool isFile(){
-		return (this.getClass()==File);
+	public boolean isFile(){
+		return (this instanceof File);
 	}
 	
-	public bool isImage(){
-		return (this.getClass()==Image);
+	public boolean isImage(){
+		return (this instanceof Image);
 	}
 	
-	public bool isText(){
-		return (this.getClass()==Text);
+	public boolean isText(){
+		return (this instanceof Text);
 	}
 	
-	public bool isNewUsername() {
-		return (this.getClass()==NewUsername)
+	public boolean isNewUsername() {
+		return (this instanceof NewUsername);
 	}
 }
