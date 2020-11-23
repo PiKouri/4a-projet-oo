@@ -1,9 +1,12 @@
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Map;
 
 public class Agent extends Subject {
-	private MyMap<String,User> mapUsernames;
-	private MyMap<User,MessageEmissionObserver> mapObserver;
+	private MyMap<User,String> mapUsernames; // A modifier sur le diagramme
+	private MyMap<User,MessageEmissionObserver> mapObservers; // A modifier sur le diagramme
+	private Map<User,ArrayList<Message>> mapMessages; // A modifier sur le diagramme
+	private ArrayList<User> otherUsers;  // A modifier sur le diagramme
 	
 	public boolean chooseUsername(String name) {
 		return true;
@@ -22,7 +25,7 @@ public class Agent extends Subject {
 	}
 	
 	private User nameResolve(String username) {
-		return new User();
+		return mapUsernames.getUser(username);
 	}
 	
 	private void checkUsernameAvailability(String username) {
@@ -30,7 +33,9 @@ public class Agent extends Subject {
 	}
 	
 	public void userDisconnect(User user) {
-		
+		mapUsernames.remove(user);
+		mapObservers.remove(user);
+		otherUsers.remove(user);
 	}
 	
 	public void newActiveUserSocket(Socket socket) {
