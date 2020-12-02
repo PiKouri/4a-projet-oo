@@ -36,16 +36,28 @@ public class BroadcastClient {
         return broadcastList;
     }
 
-    public void sendBroadcast(String message) throws IOException {
+    public void sendBroadcast(String message) {
     	//broadcast("Hello test", InetAddress.getByName("255.255.255.255"));
-    	listBroadcastAddresses = listAllBroadcastAddresses();
+    	try {
+			listBroadcastAddresses = listAllBroadcastAddresses();
+		} catch (SocketException e) {
+			System.out.printf("Could not list all broadcast addresses ERROR\n");
+			System.exit(-1);
+		}
+    	System.out.printf("Message : %s\n", message);
     	for (InetAddress address : listBroadcastAddresses) {
-     		broadcast(message, address);
-    		System.out.printf("Address : %s \n", address.toString()); 
+     		try {
+				broadcast(message, address);
+			} catch (IOException e) {
+				System.out.printf("Could not send broadcast message ERROR\n");
+				System.exit(-1);
+			}
+    		System.out.printf("Address : %s | ", address.toString()); 
     	}
+    	System.out.print("\n");
     }
 
-    public void broadcast(
+    private void broadcast(
       String broadcastMessage, InetAddress address) throws IOException {
         socket = new DatagramSocket();
         socket.setBroadcast(true);

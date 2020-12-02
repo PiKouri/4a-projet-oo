@@ -49,8 +49,4 @@ public class Message {
 	public boolean isText(){
 		return (this instanceof Text);
 	}
-	
-	public boolean isNewUsername() {
-		return (this instanceof NewUsername);
-	}
 }

@@ -6,25 +6,28 @@ import java.net.Socket;
 //import java.net.SocketAddress;
 import java.net.SocketException;
 
-
 public class UDPServer extends Thread {
 	
-	private int broadcastPortNumber = 4445;
-	private int defaultPortNumber = 1234;
+	
 
 	// UDP Broadcast fields
 	
     private DatagramSocket socket;
-    private boolean running;
+    public boolean running;
     private byte[] buf = new byte[256];
     
     // Agent field
     
     private Agent agent;
+    
+    public String lastUsernameChecked;
+    
+    public boolean lastUsernameAvailablity;
+    
 
     public UDPServer(Agent agent) throws SocketException {
     	this.agent = agent;
-    	socket = new DatagramSocket(broadcastPortNumber);
+    	socket = new DatagramSocket(Agent.broadcastPortNumber);
     }
     
     // Get destination ip (local) of the packet
@@ -44,15 +47,10 @@ public class UDPServer extends Thread {
     }*/
 
     public void run(){
-    	try {
-			socket = new DatagramSocket(4445);
-		} catch (SocketException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-        running = true;
+    	
+        this.running = true;
 
-        while (running) {
+        while (this.running) {
             buf = new byte[256];
             DatagramPacket packet 
               = new DatagramPacket(buf, buf.length);
@@ -71,24 +69,65 @@ public class UDPServer extends Thread {
             received = received.replaceAll("\0\0", "");
             received = received.replaceAll("(\0)$", "");
             System.out.printf("%s:%d said : %s.\n \n", address.toString(), port , received); 
-            
+                       
             // Message type : // A voir
-            // "username"
+            // "connect username"
+            // "disconnect username"
+            // "changeUsername oldUsername newUsername"
+            // "checkUsernameAvailablity username"
+            // "tellUsernameAvailablity username true/false"
             
-            agent.userConnect(new User(received));
+            String[] strip = received.split(" ");
+            
+            String action = strip[0];
+            String username = strip[1];
+            
+            switch (action) {
+            
+            case "connect" :
+            	this.agent.userConnect(username);
+            	
+            	try {
+					Socket sock = new Socket(address, Agent.defaultPortNumber);
+	            	this.agent.newActiveUserSocket(sock);
+				} catch (IOException e1) {
+					System.out.printf("Could not create socket when trying to connect ERROR\n");
+					System.exit(-1);
+				}          	
+            	break;
+            case "disconnect" :
+            	this.agent.userDisconnect(username);
+            	break;
+            case "changeUsername" :
+            	String newUsername = strip[2];
+            	this.agent.userChangeUsername(username, newUsername);
+            	break;            
+            case "checkUsernameAvailablity" : // Quelqu'un demande la disponibilité d'un nom
+            	this.agent.tellUsernameAvailibility(username);
+            	break;
+            case "tellUsernameAvailablity" : // On a demandé la disponibilité d'un nom et on reçoit la réponse
+            	if (username != this.lastUsernameChecked) {
+            		this.lastUsernameChecked = username;
+            		this.lastUsernameAvailablity = Boolean.parseBoolean(strip[2]);
+            	}
+            	break;
+            default :
+            	System.out.printf("Error reading packet \n %s \n", received);
+				System.exit(-1);
+            }
             
 			try {
-				Socket newSocket = new Socket(address, defaultPortNumber);
+				Socket newSocket = new Socket(address, Agent.defaultPortNumber);
 				agent.newActiveUserSocket(newSocket);     
 			} catch (IOException e) {
 				System.out.printf("Could not create socket ERROR\n");
 				System.exit(-1);
 			}
 			
-			// Send "end" from Agent to Server to stop running
+			// Send "end" from Agent to Server to stop running ? pas sur
 			
             if (received.equals("end")) {
-                running = false;
+                this.running = false;
                 continue;
             }
             //System.out.printf("Local IP of this packet was: %s.\n",getOutboundAddress(packet.getSocketAddress()).getHostAddress());

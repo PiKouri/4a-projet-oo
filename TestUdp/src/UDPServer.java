@@ -16,6 +16,7 @@ public class UDPServer extends Thread {
     private static byte[] buf = new byte[256];
 
     public UDPServer() throws SocketException {
+    	System.out.println("UDP Server créé");
     	socket = new DatagramSocket(UDPServer.broadcastPortNumber);
     }
     
@@ -27,7 +28,7 @@ public class UDPServer extends Thread {
 
         final InetAddress localAddress = sock.getLocalAddress();
 
-        sock.disconnect();
+        so)ck.disconnect();
         sock.close();
         sock = null;
 
@@ -35,12 +36,7 @@ public class UDPServer extends Thread {
     }*/
 
     public static void main(String[] args) throws IOException {
-    	try {
-			socket = new DatagramSocket(4445);
-		} catch (SocketException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+    	socket = new DatagramSocket(UDPServer.broadcastPortNumber);
         running = true;
 
         while (running) {

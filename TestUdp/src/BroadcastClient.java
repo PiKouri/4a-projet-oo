@@ -11,13 +11,13 @@ import java.util.Objects;
 
 public class BroadcastClient {
 	
-    private static DatagramSocket socket = null;
+    private DatagramSocket socket = null;
     
-    private static int broadcastPortNumber = 4445;
+    private int broadcastPortNumber = 4445;
     
-    private static List<InetAddress> listBroadcastAddresses = null;
+    private List<InetAddress> listBroadcastAddresses = null;
     
-    private static List<InetAddress> listAllBroadcastAddresses() throws SocketException {
+    private List<InetAddress> listAllBroadcastAddresses() throws SocketException {
         List<InetAddress> broadcastList = new ArrayList<>();
         Enumeration<NetworkInterface> interfaces 
           = NetworkInterface.getNetworkInterfaces();
@@ -36,18 +36,28 @@ public class BroadcastClient {
         return broadcastList;
     }
 
-    public static void main(String[] args) throws IOException {
+    public void sendBroadcast(String message) {
     	//broadcast("Hello test", InetAddress.getByName("255.255.255.255"));
-    	listBroadcastAddresses = listAllBroadcastAddresses();
+    	try {
+			listBroadcastAddresses = listAllBroadcastAddresses();
+		} catch (SocketException e) {
+			System.out.printf("Could not list all broadcast addresses ERROR\n");
+			System.exit(-1);
+		}
+    	System.out.printf("Message : %s\n", message);
     	for (InetAddress address : listBroadcastAddresses) {
-     		broadcast("Hello test", address);
-    		broadcast("Test 2", address);
-    		broadcast("end", address);
-    		System.out.printf("Address : %s \n", address.toString()); 
+     		try {
+				broadcast(message, address);
+			} catch (IOException e) {
+				System.out.printf("Could not send broadcast message ERROR\n");
+				System.exit(-1);
+			}
+     		System.out.printf("Address : %s | ", address.toString()); 
     	}
+    	System.out.print("\n");
     }
 
-    public static void broadcast(
+    private void broadcast(
       String broadcastMessage, InetAddress address) throws IOException {
         socket = new DatagramSocket();
         socket.setBroadcast(true);
@@ -55,7 +65,7 @@ public class BroadcastClient {
         byte[] buffer = broadcastMessage.getBytes();
 
         DatagramPacket packet 
-          = new DatagramPacket(buffer, buffer.length, address, BroadcastClient.broadcastPortNumber);
+          = new DatagramPacket(buffer, buffer.length, address, broadcastPortNumber);
         socket.send(packet);
         socket.close();
     }
