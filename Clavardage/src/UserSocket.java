@@ -13,7 +13,7 @@ public class UserSocket extends Subject {
 	
 	
 	public User getUser() {
-		return new User();
+		return new User("");
 	}
 	
 /*-----------------------Méthodes-------------------------*/
