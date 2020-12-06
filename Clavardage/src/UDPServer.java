@@ -2,9 +2,14 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.Socket;
 //import java.net.SocketAddress;
 import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Objects;
 
 public class UDPServer extends Thread {
 	
@@ -24,10 +29,37 @@ public class UDPServer extends Thread {
     
     public boolean lastUsernameAvailablity;
     
+    private List<InetAddress> listAllOwnLocalAddresses = null;
+    
+    private List<InetAddress> listAllOwnLocalAddresses() throws SocketException {
+        List<InetAddress> addressList = new ArrayList<>();
+        Enumeration<NetworkInterface> interfaces 
+          = NetworkInterface.getNetworkInterfaces();
+        while (interfaces.hasMoreElements()) {
+            NetworkInterface networkInterface = interfaces.nextElement();
 
+            if (networkInterface.isLoopback() || !networkInterface.isUp()) {
+                continue;
+            }
+
+            networkInterface.getInterfaceAddresses().stream() 
+              .map(a -> a.getAddress())
+              .filter(Objects::nonNull)
+              .forEach(addressList::add);
+        }
+        return addressList;
+    }
+    
     public UDPServer(Agent agent) throws SocketException {
+    	if (Agent.debug) System.out.println("UDP Server created");
     	this.agent = agent;
     	socket = new DatagramSocket(Agent.broadcastPortNumber);
+    	try {
+    		listAllOwnLocalAddresses = listAllOwnLocalAddresses();
+		} catch (SocketException e) {
+			System.out.printf("Could not list all broadcast addresses ERROR\n");
+			System.exit(-1);
+		}
     }
     
     // Get destination ip (local) of the packet
@@ -47,7 +79,6 @@ public class UDPServer extends Thread {
     }*/
 
     public void run(){
-    	
         this.running = true;
 
         while (this.running) {
@@ -62,13 +93,15 @@ public class UDPServer extends Thread {
 			}
             
             InetAddress address = packet.getAddress();
+            if (listAllOwnLocalAddresses.contains(address)) continue; // Ignore own broadcast messages
+            
             int port = packet.getPort();
             packet = new DatagramPacket(buf, buf.length, address, port);
             String received 
               = new String(packet.getData(), 0, packet.getLength());
             received = received.replaceAll("\0\0", "");
             received = received.replaceAll("(\0)$", "");
-            System.out.printf("%s:%d said : %s.\n \n", address.toString(), port , received); 
+            if (Agent.debug) System.out.printf("UDP Server - %s:%d said : %s.\n \n", address.toString(), port , received); 
                        
             // Message type : // A voir
             // "connect username"
@@ -126,12 +159,13 @@ public class UDPServer extends Thread {
 			
 			// Send "end" from Agent to Server to stop running ? pas sur
 			
-            if (received.equals("end")) {
+            /*if (received.equals("end")) {
                 this.running = false;
                 continue;
-            }
+            }*/
             //System.out.printf("Local IP of this packet was: %s.\n",getOutboundAddress(packet.getSocketAddress()).getHostAddress());
         }
-        socket.close();
+        if (Agent.debug) System.out.println("Broadcast Server interrupted");
+        this.socket.close();
     }
 }

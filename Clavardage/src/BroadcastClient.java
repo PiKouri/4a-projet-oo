@@ -44,7 +44,7 @@ public class BroadcastClient {
 			System.out.printf("Could not list all broadcast addresses ERROR\n");
 			System.exit(-1);
 		}
-    	System.out.printf("Message : %s\n", message);
+    	if (Agent.debug) System.out.printf("Broadcast Client - Message : %s\n", message);
     	for (InetAddress address : listBroadcastAddresses) {
      		try {
 				broadcast(message, address);
@@ -52,9 +52,8 @@ public class BroadcastClient {
 				System.out.printf("Could not send broadcast message ERROR\n");
 				System.exit(-1);
 			}
-    		System.out.printf("Address : %s | ", address.toString()); 
+    		//System.out.printf("Broadcast Client - Address : %s\n", address.toString()); 
     	}
-    	System.out.print("\n");
     }
 
     private void broadcast(

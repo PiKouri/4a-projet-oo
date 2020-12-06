@@ -38,7 +38,6 @@ public class UDPServer extends Thread {
     public static void main(String[] args) throws IOException {
     	socket = new DatagramSocket(UDPServer.broadcastPortNumber);
         running = true;
-
         while (running) {
             buf = new byte[256];
             DatagramPacket packet 

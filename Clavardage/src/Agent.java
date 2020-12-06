@@ -4,10 +4,13 @@ import java.net.Socket;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Scanner;
 
 public class Agent extends Subject {
 	
 	// NewUsername enlevé
+	
+	public static boolean debug = true;
 	
 	public static int broadcastPortNumber = 4445; // A modifier sur le diagramme
 	public static int defaultPortNumber = 1234; // A modifier sur le diagramme
@@ -26,23 +29,27 @@ public class Agent extends Subject {
 		this.me = me;
 		this.broadcastClient = new BroadcastClient();
 		this.broadcastServer = new UDPServer(this);
-		new Thread(broadcastServer);
+		(new Thread(broadcastServer)).start();
 		this.mapUsernames = new MyMap<User,String>();
 		this.connectionServer = new Server(this);
-		new Thread(connectionServer);
+		(new Thread(connectionServer)).start();
 		
 		chooseUsername(me.getUsername());
 		this.broadcastClient.sendBroadcast("connect " + this.me.getUsername()); // A voir
+		
 		// Creer UDP Server, BroadcastClient + viewActiveUsernames 
 	}
 	
 	public void chooseUsername(String name) { // A modifier sur le diagramme
 		boolean ok = checkUsernameAvailability(name);
 		String newName = name;
+		Scanner scanner = new Scanner(System.in); // A changer avec l'interface graphique
 		while (!ok) {
-			
-			ok = checkUsernameAvailability(name);
+			System.out.print("Enter your name: ");
+			newName = scanner.next();
+			ok = checkUsernameAvailability(newName);
 		}
+		scanner.close();
 		this.me.changeUsername(newName);
 		this.broadcastClient.sendBroadcast("changeUsername "+ this.me.getUsername() + " " + this.me.getUsername());
 	}
@@ -66,8 +73,9 @@ public class Agent extends Subject {
 	public void disconnect() throws IOException { // A modifier sur le diagramme
 		this.broadcastClient.sendBroadcast("disconnect " + this.me.getUsername()); // A voir
 		// A voir
-		broadcastServer.running = false;
-		connectionServer.running = false;
+		this.broadcastServer.running = false;
+		
+		this.connectionServer.interrupt();
 	}
 	
 	private User nameResolve(String username) {
@@ -87,7 +95,7 @@ public class Agent extends Subject {
 			while (this.broadcastServer.lastUsernameChecked != username && (fin > System.currentTimeMillis())) {}
 			ok = this.broadcastServer.lastUsernameAvailablity;
 			if (fin <= System.currentTimeMillis()) {
-				System.out.println("Connection timeout, we consider ourselves as first user");
+				if (Agent.debug) System.out.println("Connection timeout, we consider ourselves as first user");
 				ok = true;
 			}
 		} else { // Autrement on regarde dans notre table locale

@@ -5,35 +5,40 @@ import java.net.Socket;
 
 public class Server extends Thread{ // a modifier sur le diagramme
 	
-	public boolean running;
-	
 	private ServerSocket socket;
 	
 	private Agent agent;
 	
 	public Server(Agent agent) throws IOException {
 		this.agent = agent;
-		System.out.println("UDP Server créé");
+		if (Agent.debug) System.out.println("Connection Server created");
 		this.socket = new ServerSocket(Agent.defaultPortNumber);
 	}
 	
+	public void interrupt() {
+		if (Agent.debug) System.out.println("Connection Server interrupted");
+		try {
+			this.socket.close();
+		} catch (IOException e) {
+			System.out.println("Error in socket.close()");
+		}
+	}
+	
 	public void run() {
-    	System.out.println("UDP Server créé");
-		this.running=true;
 		try {
 			waitForConnection();
 		} catch (IOException e) {
-			System.out.printf("Error in waitForConnection\n");
+			System.out.printf("Connection Server - Exited waitForConnection\n");
 			System.exit(-1);
 		}
 	}
 	
 	public void waitForConnection() throws IOException {
-		while (this.running) {
-			Socket link = this.socket.accept();
+		while (true) {
+			Socket link;
+			link = this.socket.accept();
 			this.agent.newActiveUserSocket(link);
 		}
-		this.socket.close();
 	}
 
 }
