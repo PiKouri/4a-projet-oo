@@ -71,6 +71,7 @@ public class UDPClient {
     
     public void sendUDP(String udpMessage, InetAddress address){
     	try {
+        	if (Agent.debug) System.out.printf("UDP Client - Message to %s : %s\n", address.toString() , udpMessage);
 		  	socket = new DatagramSocket();
 		  	byte[] buffer = udpMessage.getBytes();
 			DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, broadcastPortNumber);

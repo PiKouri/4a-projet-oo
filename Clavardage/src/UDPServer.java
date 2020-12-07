@@ -6,6 +6,7 @@ import java.net.NetworkInterface;
 import java.net.Socket;
 //import java.net.SocketAddress;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -27,9 +28,9 @@ public class UDPServer extends Thread {
     
     private String lastUsernameChecked;
     
-    private boolean lastUsernameAvailability = false;
+    private boolean lastUsernameAvailability;
     
-    private boolean usernameChecked = false;
+    private boolean usernameChecked;
     
     private List<InetAddress> listAllOwnLocalAddresses = null;
     
@@ -63,6 +64,8 @@ public class UDPServer extends Thread {
 			System.exit(-1);
 		}
     	lastUsernameChecked = "";
+    	lastUsernameAvailability = false;
+    	usernameChecked=false;
     }
     
     // Get destination ip (local) of the packet
@@ -80,20 +83,23 @@ public class UDPServer extends Thread {
 
         return localAddress;
     }*/
+    
+    public void interrupt() {
+    	if (Agent.debug) System.out.println("UDP Server interrupted");
+    	this.running = false;
+    	socket.close();
+    }
 
     public void run(){
         this.running = true;
 
-        while (this.running) {
+        try {while (this.running) {
             buf = new byte[256];
             DatagramPacket packet 
               = new DatagramPacket(buf, buf.length);
-            try {
+            
 				socket.receive(packet);
-			} catch (IOException e) {
-				System.out.printf("Could not receive packet ERROR\n");
-				System.exit(-1);
-			}
+			
             
             InetAddress address = packet.getAddress();
             if (listAllOwnLocalAddresses.contains(address)) continue; // Ignore own broadcast messages
@@ -114,7 +120,7 @@ public class UDPServer extends Thread {
             // "tellUsernameAvailability username true/false"
             // "canAccess username" -> After receiving connect, send canAccess to this person
             
-            ////////////////////////////////////////// "updateDisconnectedUsers username"
+            // "updateDisconnectedUsers username address"
             
             String[] strip = received.split(" ");
             
@@ -131,8 +137,9 @@ public class UDPServer extends Thread {
 	            	this.agent.newActiveUserSocket(sock);
 				} catch (IOException e1) {
 					System.out.printf("Could not create socket when trying to connect ERROR\n");
-					System.exit(-1);
-				}          	
+				}
+            	try {Thread.sleep(500);} catch (Exception e) {} // Attente pour éviter d'envoyer une liste non mis à jour
+            	this.agent.tellDisconnectedUsers(address);
             	break;
             case "disconnect" :
             	this.agent.userDisconnect(username, address);
@@ -145,28 +152,32 @@ public class UDPServer extends Thread {
             	this.agent.tellUsernameAvailibility(username, address);
             	break;
             case "tellUsernameAvailability" : // On a demandé la disponibilité d'un nom et on reçoit la réponse
+            	System.out.println("Je suis là");
         		this.lastUsernameAvailability = Boolean.parseBoolean(strip[2]);
         		this.lastUsernameChecked = username;
-        		this.usernameChecked = true;
+        		setUsernameChecked(true);
             	break;
             case "canAccess" : 
             	this.agent.userConnect(username, address);
             	break;
+            case "updateDisconnectedUsers" :
+            	String disconnectedAddress = strip[2];
+            	disconnectedAddress = disconnectedAddress.split("/")[1]; // Format d'adresse après .toString : \192.168.1.1
+            	try {
+            		InetAddress ipAddress = InetAddress.getByName(disconnectedAddress);
+            		this.agent.updateDisconnectedUsers(username, ipAddress);
+            		}
+            	catch (UnknownHostException e) {
+            		System.out.printf("Error UnknowHost : %s.\n", disconnectedAddress);
+            		}
+            	break;
             default :
             	System.out.printf("Error reading packet \n %s \n", received);
-				System.exit(-1);
             }
 			
-			// Send "end" from Agent to Server to stop running ? pas sur
-			
-            /*if (received.equals("end")) {
-                this.running = false;
-                continue;
-            }*/
             //System.out.printf("Local IP of this packet was: %s.\n",getOutboundAddress(packet.getSocketAddress()).getHostAddress());
         }
-        if (Agent.debug) System.out.println("Broadcast Server interrupted");
-        this.socket.close();
+        } catch (IOException e) {System.out.printf("Could not receive packet ERROR\n");}
     }
     
     public String getLastUsernameChecked() {return this.lastUsernameChecked;}

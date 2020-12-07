@@ -29,7 +29,6 @@ public class Server extends Thread{ // a modifier sur le diagramme
 			waitForConnection();
 		} catch (IOException e) {
 			System.out.printf("Connection Server - Exited waitForConnection\n");
-			System.exit(-1);
 		}
 	}
 	
