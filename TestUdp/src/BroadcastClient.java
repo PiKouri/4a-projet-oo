@@ -69,4 +69,15 @@ public class BroadcastClient {
         socket.send(packet);
         socket.close();
     }
+    
+    public void sendUDP(
+    	      String udpMessage, InetAddress address) throws IOException{
+    	socket = new DatagramSocket();
+    	byte[] buffer = udpMessage.getBytes();
+
+        DatagramPacket packet 
+          = new DatagramPacket(buffer, buffer.length, address, broadcastPortNumber);
+        socket.send(packet);
+        socket.close();
+    }
 }

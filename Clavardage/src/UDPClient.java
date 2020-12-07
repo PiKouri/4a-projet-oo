@@ -68,4 +68,17 @@ public class UDPClient {
         socket.send(packet);
         socket.close();
     }
+    
+    public void sendUDP(String udpMessage, InetAddress address){
+    	try {
+		  	socket = new DatagramSocket();
+		  	byte[] buffer = udpMessage.getBytes();
+			DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, broadcastPortNumber);
+			socket.send(packet);
+			socket.close();
+    	} catch (Exception e) {
+    		System.out.printf("Could not send UDP message ERROR\n");
+			System.exit(-1);
+    	}
+  }
 }

@@ -25,9 +25,11 @@ public class UDPServer extends Thread {
     
     private Agent agent;
     
-    public String lastUsernameChecked;
+    private String lastUsernameChecked;
     
-    public boolean lastUsernameAvailablity;
+    private boolean lastUsernameAvailability = false;
+    
+    private boolean usernameChecked = false;
     
     private List<InetAddress> listAllOwnLocalAddresses = null;
     
@@ -108,8 +110,9 @@ public class UDPServer extends Thread {
             // "connect username"
             // "disconnect username"
             // "changeUsername oldUsername newUsername"
-            // "checkUsernameAvailablity username"
-            // "tellUsernameAvailablity username true/false"
+            // "checkUsernameAvailability username"
+            // "tellUsernameAvailability username true/false"
+            // "canAccess username" -> After receiving connect, send canAccess to this person
             
             ////////////////////////////////////////// "updateDisconnectedUsers username"
             
@@ -121,8 +124,8 @@ public class UDPServer extends Thread {
             switch (action) {
             
             case "connect" :
+            	this.agent.tellCanAccess(address);
             	this.agent.userConnect(username, address);
-            	
             	try {
 					Socket sock = new Socket(address, Agent.defaultPortNumber);
 	            	this.agent.newActiveUserSocket(sock);
@@ -138,12 +141,16 @@ public class UDPServer extends Thread {
             	String newUsername = strip[2];
             	this.agent.userChangeUsername(username, newUsername);
             	break;            
-            case "checkUsernameAvailablity" : // Quelqu'un demande la disponibilité d'un nom
+            case "checkUsernameAvailability" : // Quelqu'un demande la disponibilité d'un nom
             	this.agent.tellUsernameAvailibility(username, address);
             	break;
-            case "tellUsernameAvailablity" : // On a demandé la disponibilité d'un nom et on reçoit la réponse
-        		this.lastUsernameAvailablity = Boolean.parseBoolean(strip[2]);
+            case "tellUsernameAvailability" : // On a demandé la disponibilité d'un nom et on reçoit la réponse
+        		this.lastUsernameAvailability = Boolean.parseBoolean(strip[2]);
         		this.lastUsernameChecked = username;
+        		this.usernameChecked = true;
+            	break;
+            case "canAccess" : 
+            	this.agent.userConnect(username, address);
             	break;
             default :
             	System.out.printf("Error reading packet \n %s \n", received);
@@ -161,4 +168,9 @@ public class UDPServer extends Thread {
         if (Agent.debug) System.out.println("Broadcast Server interrupted");
         this.socket.close();
     }
+    
+    public String getLastUsernameChecked() {return this.lastUsernameChecked;}
+    public boolean getLastUsernameAvailability() {return this.lastUsernameAvailability;}
+    public boolean wasUsernameChecked() {return this.usernameChecked;}
+    public void setUsernameChecked(boolean bo) {this.usernameChecked = bo;}
 }

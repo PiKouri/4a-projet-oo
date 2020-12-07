@@ -37,7 +37,6 @@ public class Server extends Thread{ // a modifier sur le diagramme
 		while (true) {
 			Socket link;
 			link = this.socket.accept();
-			System.out.printf("New connection\n");
 			this.agent.newActiveUserSocket(link);
 		}
 	}
