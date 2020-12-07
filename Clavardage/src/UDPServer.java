@@ -111,6 +111,8 @@ public class UDPServer extends Thread {
             // "checkUsernameAvailablity username"
             // "tellUsernameAvailablity username true/false"
             
+            ////////////////////////////////////////// "updateDisconnectedUsers username"
+            
             String[] strip = received.split(" ");
             
             String action = strip[0];
@@ -119,7 +121,7 @@ public class UDPServer extends Thread {
             switch (action) {
             
             case "connect" :
-            	this.agent.userConnect(username);
+            	this.agent.userConnect(username, address);
             	
             	try {
 					Socket sock = new Socket(address, Agent.defaultPortNumber);
@@ -130,20 +132,18 @@ public class UDPServer extends Thread {
 				}          	
             	break;
             case "disconnect" :
-            	this.agent.userDisconnect(username);
+            	this.agent.userDisconnect(username, address);
             	break;
             case "changeUsername" :
             	String newUsername = strip[2];
             	this.agent.userChangeUsername(username, newUsername);
             	break;            
             case "checkUsernameAvailablity" : // Quelqu'un demande la disponibilité d'un nom
-            	this.agent.tellUsernameAvailibility(username);
+            	this.agent.tellUsernameAvailibility(username, address);
             	break;
             case "tellUsernameAvailablity" : // On a demandé la disponibilité d'un nom et on reçoit la réponse
-            	if (username != this.lastUsernameChecked) {
-            		this.lastUsernameChecked = username;
-            		this.lastUsernameAvailablity = Boolean.parseBoolean(strip[2]);
-            	}
+        		this.lastUsernameAvailablity = Boolean.parseBoolean(strip[2]);
+        		this.lastUsernameChecked = username;
             	break;
             default :
             	System.out.printf("Error reading packet \n %s \n", received);

@@ -9,7 +9,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
 
-public class BroadcastClient {
+public class UDPClient {
 	
     private DatagramSocket socket = null;
     
