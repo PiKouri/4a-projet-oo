@@ -45,13 +45,21 @@ public class Agent extends Subject {
 		String newName = name;
 		Scanner scanner = new Scanner(System.in); // A changer avec l'interface graphique
 		while (!ok) {
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				System.out.printf("Thread Interrupted\n");
+				System.exit(-1);
+			}
 			System.out.print("Enter your name: ");
 			newName = scanner.next();
 			ok = checkUsernameAvailability(newName);
 		}
 		scanner.close();
-		this.me.changeUsername(newName);
-		this.broadcastClient.sendBroadcast("changeUsername "+ this.me.getUsername() + " " + this.me.getUsername());
+		if ((this.me.getUsername()!="") && (newName != this.me.getUsername())) {
+			this.broadcastClient.sendBroadcast("changeUsername "+ this.me.getUsername() + " " + newName);
+			this.me.changeUsername(newName);
+		}
 	}
 	
 	public ArrayList<String> viewActiveUsernames(){
@@ -92,7 +100,7 @@ public class Agent extends Subject {
 		
 		if (this.mapUsernames.isEmpty()) { // Première connexion
 			this.broadcastClient.sendBroadcast("checkUsernameAvailablity "+username);
-			while (this.broadcastServer.lastUsernameChecked != username && (fin > System.currentTimeMillis())) {}
+			while (!(this.broadcastServer.lastUsernameChecked.equals(username)) && (fin > System.currentTimeMillis())) {}
 			ok = this.broadcastServer.lastUsernameAvailablity;
 			if (fin <= System.currentTimeMillis()) {
 				if (Agent.debug) System.out.println("Connection timeout, we consider ourselves as first user");

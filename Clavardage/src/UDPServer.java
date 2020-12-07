@@ -60,6 +60,7 @@ public class UDPServer extends Thread {
 			System.out.printf("Could not list all broadcast addresses ERROR\n");
 			System.exit(-1);
 		}
+    	lastUsernameChecked = "";
     }
     
     // Get destination ip (local) of the packet
@@ -148,14 +149,6 @@ public class UDPServer extends Thread {
             	System.out.printf("Error reading packet \n %s \n", received);
 				System.exit(-1);
             }
-            
-			try {
-				Socket newSocket = new Socket(address, Agent.defaultPortNumber);
-				agent.newActiveUserSocket(newSocket);     
-			} catch (IOException e) {
-				System.out.printf("Could not create socket ERROR\n");
-				System.exit(-1);
-			}
 			
 			// Send "end" from Agent to Server to stop running ? pas sur
 			

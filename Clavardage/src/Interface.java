@@ -9,9 +9,8 @@ public class Interface {
 		String name = scanner.next();
 		User me = new User(name);
 		Agent agent = new Agent(me);
-		Thread.sleep(1000);
-		agent.disconnect();
-		scanner.close();
+		//agent.disconnect();
+		//scanner.close();
 	}
 
 }
