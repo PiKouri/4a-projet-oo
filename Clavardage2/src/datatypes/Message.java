@@ -1,3 +1,4 @@
+package datatypes;
 import java.net.InetAddress;
 import java.util.Date;
 

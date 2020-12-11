@@ -1,5 +1,4 @@
 import java.io.IOException;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -9,16 +8,12 @@ import java.util.Scanner;
 
 public class Agent extends Subject {
 	
-/*-----------------------Attributs-------------------------*/
+	public static final boolean debug = true;
 	
-	// NewUsername enlevé
+	public static final long timeout = 1000; // Timeout
 	
-	public static boolean debug = true;
-	
-	public static int timeout = 1000; // Timeout
-	
-	public static int broadcastPortNumber = 4445; // A modifier sur le diagramme
-	public static int defaultPortNumber = 1234; // A modifier sur le diagramme
+	public static final int broadcastPortNumber = 4445; // A modifier sur le diagramme
+	public static final int defaultPortNumber = 1234; // A modifier sur le diagramme
 	
 	private User me; // A modifier sur le diagramme
 	
@@ -32,43 +27,47 @@ public class Agent extends Subject {
 	
 	private Server connectionServer; // A modifier sur le diagramme
 	private UDPServer udpServer; // A modifier sur le diagramme
-	
 	private UDPClient udpClient; // A modifier sur le diagramme
 	
-	private boolean firstConnection = true;
+	private Object usernameChecked; // Objet qui permet de synchronisé l'Agent et l'UDP Server (lors de checkUsernameAvailability // A modifier sur le diagramme
+	
+	private boolean disconnected; // A modifier sur le diagramme
+	
+	private boolean firstConnection; // A modifier sur le diagramme
 	
 /*-----------------------Constructeurs-------------------------*/
 	
 	public Agent(User me) throws IOException { // A modifier sur le diagramme
+		this.firstConnection=true;
+		this.disconnected = false;
 		this.me = me;
+		
+		this.usernameChecked = new Object();
 		
 		this.udpClient = new UDPClient();
 		
-		this.udpServer = new UDPServer(this);
-		(new Thread(udpServer)).start();
+		this.udpServer = new UDPServer(this,this.usernameChecked);
 		
 		this.connectionServer = new Server(this);
-		(new Thread(connectionServer)).start();
 
 		this.mapUsernames = new MyMap<User,String>();
 		this.mapSockets = new MyMap<User,UserSocket>();
 		this.mapAddresses = new MyMap<User,InetAddress>();
 		this.mapMessages = new HashMap<>();
 		
-		this.activeUsers = new ArrayList<User>();//new HashMap<>();
-		this.disconnectedUsers = new ArrayList<User>();//new HashMap<>();
+		this.activeUsers = new ArrayList<User>();
+		this.disconnectedUsers = new ArrayList<User>();
 		
 		chooseUsername(me.getUsername());
 		this.firstConnection=false;
-		this.udpClient.sendBroadcast("connect " + this.me.getUsername()); // A voir
-		
-		// Creer UDP Server, BroadcastClient + viewActiveUsernames 
+		this.udpClient.sendBroadcast("connect " + this.me.getUsername());
 	}
 	
 /*-----------------------Méthodes utilisateur-------------------------*/
 	public void chooseUsername(String name) { // A modifier sur le diagramme
 		boolean ok=false;
 		ok = checkUsernameAvailability(name);
+		if (!this.firstConnection && name.equals(this.me.getUsername())) ok = true;
 		String newName = name;
 		@SuppressWarnings("resource")
 		Scanner scanner = new Scanner(System.in); // A changer avec l'interface graphique
@@ -89,8 +88,6 @@ public class Agent extends Subject {
 	
 	public ArrayList<String> viewActiveUsernames(){
 		ArrayList<String> list = new ArrayList<String>();
-		/*for (Map.Entry<InetAddress,User> me : activeUsers.entrySet()) {
-			User user = me.getValue();*/
 		for (User user : activeUsers) {
 			list.add(this.mapUsernames.getValue(user));
 		}
@@ -99,8 +96,6 @@ public class Agent extends Subject {
 	
 	public ArrayList<String> viewDisconnectedUsernames(){
 		ArrayList<String> list = new ArrayList<String>();
-		/*for (Map.Entry<InetAddress,User> me : disconnectedUsers.entrySet()) {
-		User user = me.getValue();*/
 		for (User user : disconnectedUsers) {
 			list.add(this.mapUsernames.getValue(user));
 		}
@@ -116,11 +111,31 @@ public class Agent extends Subject {
 	}
 	
 	public void disconnect() throws IOException { // A modifier sur le diagramme
-		this.udpClient.sendBroadcast("disconnect " + this.me.getUsername()); // A voir
-		// A voir
+		this.udpClient.sendBroadcast("disconnect " + this.me.getUsername());
 		this.udpServer.interrupt();
-		
 		this.connectionServer.interrupt();
+		this.connectionServer=null; // supprime le Server et les Sockets
+		this.udpServer=null; // supprime le Server et les Sockets
+		
+		//on met tous les utilisateurs comme déconnectés lorsque l'on se déconnecte
+		for (User u : this.activeUsers) this.disconnectedUsers.add(u);
+		this.activeUsers=new ArrayList<User>();
+		
+		this.disconnected=true;
+	}
+	
+	public void reconnect() throws IOException { // A modifier sur le diagramme
+		if (this.disconnected) {
+			this.firstConnection=true;
+			this.udpServer = new UDPServer(this,this.usernameChecked);
+			this.connectionServer = new Server(this);
+			if (Agent.debug) System.out.printf("\nLast time, your name was : %s\n",this.me.getUsername()); // A changer avec l'interface graphique
+			this.chooseUsername("");
+			this.firstConnection=false;
+			this.udpClient.sendBroadcast("connect " + this.me.getUsername()); // A voir
+		} else {
+			if (Agent.debug) System.out.printf("\nNot disconnected, cannot reconnect\n");
+		}
 	}
 
 /*-----------------------Méthodes utilitaires-------------------------*/
@@ -132,6 +147,8 @@ public class Agent extends Subject {
 	private boolean checkUsernameAvailability(String username) { // A modifier sur le diagramme
 		boolean ok = false;
 		
+		if (username.equals("")) return false;
+		
 		long time = System.currentTimeMillis();//temps de depart
 		long fin=time + timeout;//temps de fin
 		
@@ -139,16 +156,37 @@ public class Agent extends Subject {
 		
 		if (this.firstConnection) { // Première connexion
 			this.udpClient.sendBroadcast("checkUsernameAvailability "+username);
-			while (!(this.udpServer.wasUsernameChecked() && this.udpServer.getLastUsernameChecked().equals(username)) && (fin > System.currentTimeMillis())) {System.out.printf("\n%b\n",this.udpServer.wasUsernameChecked());}
-			System.out.printf("\n\n %b | %b | %s | %s \n\n",this.udpServer.wasUsernameChecked(),this.udpServer.getLastUsernameChecked().equals(username), this.udpServer.getLastUsernameChecked(), username);
+			/*try {
+				while (!ok) {
+					if (fin <= System.currentTimeMillis()) throw new TimeoutException();
+					ok = this.udpServer.wasUsernameChecked();
+					try {Thread.sleep(100);} catch (Exception e) {}
+				}
+				ok = this.udpServer.getLastUsernameAvailability();
+			} catch (TimeoutException e) {
+				if (Agent.debug) System.out.println("Connection timeout, we consider ourselves as first user");
+				ok = true;
+			}*/
+			
+			try {
+				synchronized(this.usernameChecked) {this.usernameChecked.wait(timeout);}
+			} catch (InterruptedException e) {} // wait for response of other users
 			ok = this.udpServer.getLastUsernameAvailability();
 			if (fin <= System.currentTimeMillis()) {
 				if (Agent.debug) System.out.println("Connection timeout, we consider ourselves as first user");
 				ok = true;
 			}
-			this.udpServer.setUsernameChecked(false);
 		} else { // Autrement on regarde dans notre table locale
 			ok = !(this.mapUsernames.containsValue(username));
+		}
+		return ok;
+	}
+	
+	public static boolean verifyUniqAddress(ArrayList<User> list, InetAddress address) { // A modifier sur le diagramme
+		boolean ok = true;
+		for (User temp : list) {
+			ok = !temp.getAddress().equals(address);
+			if (!ok) break;
 		}
 		return ok;
 	}
@@ -159,15 +197,14 @@ public class Agent extends Subject {
 		if (!this.firstConnection) {
 			boolean ok = checkUsernameAvailability(username);
 			// Envoie vrai si le nom est inconnu ...
-			if (!ok && !(username.equals(this.me.getUsername()))) {
+			if (!(username.equals(this.me.getUsername())) && !ok) {
 				User user = nameResolve(username);
 				ok = user.getAddress().equals(address);
-				/*System.out.printf("User demandé : %s | Adresse : %s | Adresse de la demande : %s | ok = %b\n", 
-						user.getUsername(),user.getAddress().toString(),address.toString(),ok);*/
 				// ... ou si le nom est connu mais que l'utilisateur demandant est le même (adressse IP)
 			}
 			this.udpClient.sendUDP("tellUsernameAvailability "+username+" "+ ok, address);
-		} else { // A la première connexion : premier arrivé / premier servi
+		} else { 
+			// A la première connexion : premier arrivé / premier servi
 			// Si quelqu'un veut le même nom, on lui dit qu'il n'est pas disponible
 			if (username.equals(this.me.getUsername())) this.udpClient.sendBroadcast("tellUsernameAvailability "+username+" "+ false);
 		}
@@ -194,40 +231,45 @@ public class Agent extends Subject {
 /*-----------------------Méthodes actualisation de nos informations-------------------------*/
 
 	public void updateDisconnectedUsers(String username, InetAddress address) {// A modifier sur le diagramme
-		User user = new User(username,address);
-		this.disconnectedUsers.add(user);
-		this.mapUsernames.putUser(user, username);
-		this.mapAddresses.putUser(user, address);
+		if (verifyUniqAddress(this.disconnectedUsers,address) && verifyUniqAddress(this.activeUsers,address)) { // Si l'addresse n'est pas déjà connue, on l'ajoute
+			User user = new User(username,address);
+			this.disconnectedUsers.add(user);
+			this.mapUsernames.putUser(user, username);
+			this.mapAddresses.putUser(user, address);
+		}
 	}
 	
-	public void userDisconnect(String username, InetAddress address) { // A modifier sur le diagramme
+	public void userDisconnect(String username, InetAddress address) throws IOException { // A modifier sur le diagramme
 		if (!this.firstConnection) {
 			User user = nameResolve(username);
 			//this.mapUsernames.remove(user);
+			///////////////////////////////////Pas encore fait/////////////////////////////////////////this.mapSockets.getValue(user).interrupt();
 			this.mapSockets.remove(user);
 			this.activeUsers.remove(user);
-			this.disconnectedUsers.add(user);//this.disconnectedUsers.put(address,user);
+			this.disconnectedUsers.add(user);
 		}
 	}
 	
 	public void userConnect(String username, InetAddress address) { // A modifier sur le diagramme
 		if (!this.firstConnection) {
-			User oldUser = mapAddresses.getUser(address);//this.disconnectedUsers.get(address);
+			User oldUser = mapAddresses.getUser(address);
 			if (oldUser==null) { // New address
 				if (Agent.debug) System.out.printf("New user connected : %s\n",username);
 				User user = new User(username, address);
 				this.mapUsernames.putUser(user, username);
-				this.activeUsers.add(user);//this.activeUsers.put(address, user);
+				this.activeUsers.add(user);
 				this.mapAddresses.putUser(user, address);
 			} else {
-				if (Agent.debug) {
-					if (!(oldUser.getUsername().equals(username))) System.out.printf("Old user reconnected : %s -> %s\n",oldUser.getUsername(), username);
-					else System.out.printf("Old user reconnected : %s\n",username);
+				 {
+					if (!(oldUser.getUsername().equals(username))) {
+						if (Agent.debug) System.out.printf("Old user reconnected : %s -> %s\n",oldUser.getUsername(), username);
+						oldUser.changeUsername(username);
+						this.mapUsernames.replaceValue(oldUser, username);
+					}
+					if (Agent.debug) System.out.printf("Old user reconnected : %s\n",username);
 				}
-				oldUser.changeUsername(username);
-				this.mapUsernames.replaceValue(oldUser, username);
-				this.activeUsers.add(oldUser);//this.activeUsers.put(address, oldUser);
-				this.disconnectedUsers.remove(oldUser);//this.disconnectedUsers.remove(address);		
+				this.activeUsers.add(oldUser);
+				this.disconnectedUsers.remove(oldUser);		
 			} 
 		}
 	}

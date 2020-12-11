@@ -1,3 +1,4 @@
+package agent;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -19,15 +20,13 @@ public class UDPServer extends Thread {
 	// UDP Broadcast fields
 	
     private DatagramSocket socket;
-    public boolean running;
+    protected boolean running;
     private byte[] buf = new byte[256];
     
     // Agent field
     
     private Agent agent;
-    
-    private Object usernameChecked;
-    
+       
     private boolean lastUsernameAvailability;
     
     private List<InetAddress> listAllOwnLocalAddresses = null;
@@ -51,7 +50,7 @@ public class UDPServer extends Thread {
         return addressList;
     }
     
-    public UDPServer(Agent agent, Object usernameChecked) throws SocketException {
+    protected UDPServer(Agent agent) throws SocketException {
     	if (Agent.debug) System.out.println("UDP Server created");
     	this.agent = agent;
     	this.socket = new DatagramSocket(Agent.broadcastPortNumber);
@@ -62,9 +61,7 @@ public class UDPServer extends Thread {
 			System.exit(-1);
 		}
     	this.lastUsernameAvailability = false;
-    	this.usernameChecked = usernameChecked;
     	this.start();
-    	//usernameChecked=false;
     }
     
     // Get destination ip (local) of the packet
@@ -128,40 +125,40 @@ public class UDPServer extends Thread {
             switch (action) {
             
             case "connect" :
-            	this.agent.tellCanAccess(address);
-            	this.agent.userConnect(username, address);
+            	this.agent.getNetworkManager().tellCanAccess(address);
+            	this.agent.getUserStatusManager().userConnect(username, address);
             	try {
 					Socket sock = new Socket(address, Agent.defaultPortNumber);
-	            	this.agent.newActiveUserSocket(sock);
+	            	this.agent.getNetworkManager().newActiveUserSocket(sock);
 				} catch (IOException e1) {
 					System.out.printf("Could not create socket when trying to connect ERROR\n");
 				}
             	try {Thread.sleep(500);} catch (Exception e) {} // Attente pour éviter d'envoyer une liste non mis à jour
-            	this.agent.tellDisconnectedUsers(address);
+            	this.agent.getNetworkManager().tellDisconnectedUsers(address);
             	break;
             case "disconnect" :
-            	this.agent.userDisconnect(username, address);
+            	this.agent.getUserStatusManager().userDisconnect(username, address);
             	break;
             case "changeUsername" :
             	String newUsername = strip[2];
-            	this.agent.userChangeUsername(username, newUsername);
+            	this.agent.getUsernameManager().userChangeUsername(username, newUsername);
             	break;            
             case "checkUsernameAvailability" : // Quelqu'un demande la disponibilité d'un nom
-            	this.agent.tellUsernameAvailibility(username, address);
+            	this.agent.getNetworkManager().tellUsernameAvailibility(username, address);
             	break;
             case "tellUsernameAvailability" : // On a demandé la disponibilité d'un nom et on reçoit la réponse
     	     	this.lastUsernameAvailability = Boolean.parseBoolean(strip[2]);
-    	     	synchronized(this.usernameChecked) {this.usernameChecked.notifyAll();}
+    	     	synchronized(this.agent) {this.agent.notifyAll();}
             	break;
             case "canAccess" : 
-            	this.agent.userConnect(username, address);
+            	this.agent.getUserStatusManager().userConnect(username, address);
             	break;
             case "updateDisconnectedUsers" :
             	String disconnectedAddress = strip[2];
             	disconnectedAddress = disconnectedAddress.split("/")[1]; // Format d'adresse après .toString : \192.168.1.1
             	try {
             		InetAddress ipAddress = InetAddress.getByName(disconnectedAddress);
-            		this.agent.updateDisconnectedUsers(username, ipAddress);
+            		this.agent.getUserStatusManager().updateDisconnectedUsers(username, ipAddress);
             		}
             	catch (UnknownHostException e) {
             		System.out.printf("Error UnknowHost : %s.\n", disconnectedAddress);
@@ -176,5 +173,5 @@ public class UDPServer extends Thread {
         } catch (IOException e) {}
     }
     
-    public boolean getLastUsernameAvailability() {return this.lastUsernameAvailability;}
+    protected boolean getLastUsernameAvailability() {return this.lastUsernameAvailability;}
 }

@@ -1,12 +1,16 @@
+package userInterface;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+import agent.Agent;
+import datatypes.MyMap;
+
 public class Interface {
 
-	private void testMyMap() {
+	/*private void testMyMap() {
 		MyMap<User,String> test = new MyMap<User,String>();
 		User u1 = new User("u11");
 		User u2 = new User("u22");
@@ -28,7 +32,7 @@ public class Interface {
 		if (Agent.verifyUniqAddress(test,us2.getAddress()))test.add(us2);
 		if (Agent.verifyUniqAddress(test,us3.getAddress()))test.add(us3);
 		for (User u : test) System.out.println(u.getUsername());
-	}
+	}*/
 	
 	public static void main(String[] args) throws IOException, InterruptedException {
 		//testMyMap();
@@ -38,6 +42,7 @@ public class Interface {
 		boolean leave = false;
 
 		System.out.print("Enter your name: ");
+		@SuppressWarnings("resource")
 		Scanner scanner = new Scanner(System.in);
 		String name = scanner.next();
 		User me = new User(name); // Initialisation

@@ -1,5 +1,5 @@
+package agent;
 import java.io.IOException;
-import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -9,7 +9,7 @@ public class Server extends Thread{ // a modifier sur le diagramme
 	
 	private Agent agent;
 	
-	public Server(Agent agent) throws IOException {
+	protected Server(Agent agent) throws IOException {
 		this.agent = agent;
 		if (Agent.debug) System.out.println("Connection Server created");
 		this.socket = new ServerSocket(Agent.defaultPortNumber);
@@ -31,11 +31,11 @@ public class Server extends Thread{ // a modifier sur le diagramme
 		} catch (IOException e) {}
 	}
 	
-	public void waitForConnection() throws IOException {
+	protected void waitForConnection() throws IOException {
 		while (true) {
 			Socket link;
 			link = this.socket.accept();
-			this.agent.newActiveUserSocket(link);
+			this.agent.getNetworkManager().newActiveUserSocket(link);
 		}
 	}
 
