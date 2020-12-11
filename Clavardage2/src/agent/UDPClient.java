@@ -11,13 +11,23 @@ import java.util.List;
 import java.util.Objects;
 
 public class UDPClient {
+
+/*-----------------------Attributs privés-------------------------*/
 	
+	/**DatagramSocket used to send UDP messages*/
     private DatagramSocket socket = null;
-    
-    private int broadcastPortNumber = 4445;
-    
+        
+    /**List of all the available broadcast addresses*/
     private List<InetAddress> listBroadcastAddresses = null;
     
+    
+/*-----------------------Méthodes - Emission UDP-------------------------*/
+  
+    
+    /**
+     * This method lists all the available broadcast addresses      * 
+     * @return List of all the available broadcast addresses
+     */
     private List<InetAddress> listAllBroadcastAddresses() throws SocketException {
         List<InetAddress> broadcastList = new ArrayList<>();
         Enumeration<NetworkInterface> interfaces 
@@ -37,6 +47,11 @@ public class UDPClient {
         return broadcastList;
     }
 
+    /**
+     * This method sends a broadcast message on all available broadcast addresses
+     *  
+     * @param message Message that we want to send in broadcast
+     */
     public void sendBroadcast(String message) {
     	//broadcast("Hello test", InetAddress.getByName("255.255.255.255"));
     	try {
@@ -57,25 +72,36 @@ public class UDPClient {
     	}
     }
 
-    private void broadcast(
-      String broadcastMessage, InetAddress address) throws IOException {
+    /**
+     * This method sends a broadcast message to a specific broadcast address
+     *  
+     * @param broadcastMessage Message that we want to send in broadcast
+     * @param address Broadcast address to which we want to send the message
+     */
+    private void broadcast(String broadcastMessage, InetAddress address) throws IOException {
         socket = new DatagramSocket();
         socket.setBroadcast(true);
 
         byte[] buffer = broadcastMessage.getBytes();
 
         DatagramPacket packet 
-          = new DatagramPacket(buffer, buffer.length, address, broadcastPortNumber);
+          = new DatagramPacket(buffer, buffer.length, address, Agent.broadcastPortNumber);
         socket.send(packet);
         socket.close();
     }
     
+    /**
+     * This method sends a UDP message to a specific address
+     *  
+     * @param message Message that we want to send in broadcast
+     * @param address Address to which we want to send the message
+     */
     public void sendUDP(String udpMessage, InetAddress address){
     	try {
         	if (Agent.debug) System.out.printf("UDP Client - Message to %s : %s\n", address.toString() , udpMessage);
 		  	socket = new DatagramSocket();
 		  	byte[] buffer = udpMessage.getBytes();
-			DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, broadcastPortNumber);
+			DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, Agent.broadcastPortNumber);
 			socket.send(packet);
 			socket.close();
     	} catch (Exception e) {

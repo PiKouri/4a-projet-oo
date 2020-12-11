@@ -34,11 +34,10 @@ public class Interface {
 		for (User u : test) System.out.println(u.getUsername());
 	}*/
 	
-	public static void main(String[] args) throws IOException, InterruptedException {
+	public static void commandsDebugging() throws IOException {
 		//testMyMap();
 		//testVerifyUniqAddress();
 		//System.out.println(InetAddress.getByName("172.17.0.2").toString().split("/")[1]);
-		
 		boolean leave = false;
 
 		System.out.print("Enter your name: ");
@@ -93,6 +92,10 @@ public class Interface {
 			try {Thread.sleep(100);} catch (Exception e) {} // Attente pour affichage
 			if (leave) break;
 		}		
+	}
+	
+	public static void main(String[] args) throws IOException, InterruptedException {
+		commandsDebugging();
 	}
 
 }
