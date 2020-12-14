@@ -81,8 +81,9 @@ public class UserStatusManager {
 				User user = new User(username, address);
 				this.agent.getUsernameManager().addUsername(user, username);
 				this.activeUsers.add(user);
-				if (Agent.debug) System.out.printf("New address : %s | %s\n", address, user.getUsername());
+				if (Agent.debug) System.out.printf("New address : %s -> %s\n", address, user.getUsername());
 				this.agent.getNetworkManager().addAddress(user, address);
+				synchronized(this.agent.getNetworkManager()) {this.agent.getNetworkManager().notifyAll();}
 			} else {
 				 {
 					if (!(oldUser.getUsername().equals(username))) {

@@ -1,11 +1,11 @@
 package agent;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Scanner;
 
 import datatypes.*;
+import userInterface.Interface;
 import userInterface.User;
 
 public class Agent{
@@ -147,10 +147,10 @@ public class Agent{
      */
 	public void sendMessage(String dest, Message message) {
 		// TODO
-		// A faire : verifier nom
-		//InetAddress destAddress=this.networkManager.getAddress((this.usernameManager.nameResolve(dest)));
+		if (Agent.debug) this.getNetworkManager().printAll();
 		User user = this.usernameManager.nameResolve(dest);
-		this.messageManager.sendMessage(user,message);
+		if (user == null) System.out.printf("Could not resolve username : %s\n", dest);
+		else this.messageManager.sendMessage(user,message);
 	}
 	
 	/**

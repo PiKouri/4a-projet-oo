@@ -3,7 +3,6 @@ package agent;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 
 import datatypes.MyMap;
 import userInterface.User;
@@ -34,7 +33,6 @@ public class NetworkManager {
  * "tellUsernameAvailability username true/false" -> Réponse notifiant la disponibilité(ou non) de l'username
  * "canAccess username" -> Après avoir reçu un "connect", renvoie "canAccess" pour notifier notre adresse IP au nouvel arrivant
  * "updateDisconnectedUsers username address" -> Après avoir reçu un "connect", met à jour les utilisateurs déconnectés du nouvel arrivant
- * "okAccess username" -> Après avoir reçu un "canAccess", renvoie "okAccess" pour notifier la réception de l'addresse IP
 */
 
 /*-----------------------Constructeurs-------------------------*/
@@ -69,6 +67,16 @@ public class NetworkManager {
      */
 	protected void sendBroadcast(String broadcastMessage) {
 		this.udpClient.sendBroadcast(broadcastMessage);
+	}
+	
+	/**
+     * This method sends a UDP message to a specific address
+     *  
+     * @param udpMessage Message that we want to send in broadcast
+     * @param address Address to which we want to send the message
+     */
+	protected void sendUDP(String udpMessage, InetAddress address) {
+		this.udpClient.sendUDP(udpMessage,address);
 	}
 	
 	/**
@@ -132,9 +140,26 @@ public class NetworkManager {
      * @param socket Socket from which we create the UserSocket
      */
 	protected void newActiveUserSocket(Socket socket) {
-		User user = this.mapAddresses.getUser(socket.getInetAddress());
-		if (Agent.debug) System.out.printf("New socket connected: "+user.getUsername()+"\n");
-		this.mapSockets.putUser(user, new UserSocket(user, this.agent, socket));
+		// Le thread attend que l'on reçoive l'adresse de l'utilisateur avant de pouvoir créer le UserSocket
+		if (!this.agent.isFirstConnection) {
+			final class MyThread extends Thread {
+				private Agent agent; private NetworkManager nm; private Socket socket;
+				public MyThread(Agent agent,NetworkManager nm, Socket socket) {this.agent=agent;this.nm=nm;this.socket=socket;}
+				public void run() {
+					User user = null;
+					synchronized(this.nm) {
+						while (user==null) {
+							//if (Agent.debug) System.out.printf("Could not get User from address : %s -> Waiting for canAccess\n",socket.getInetAddress());
+							try {this.nm.wait(Agent.timeout);} catch (InterruptedException e) {}
+							user = this.nm.mapAddresses.getUser(socket.getInetAddress());
+						}
+					}
+					if (Agent.debug) System.out.printf("New socket connected: "+user.getUsername()+"\n");
+					this.nm.mapSockets.putUser(user, new UserSocket(user, this.agent, socket));
+				}
+			}
+			(new MyThread(this.agent,this,socket)).start();
+		}
 	}
 		
 	
@@ -237,5 +262,13 @@ public class NetworkManager {
 	protected void startAll() throws IOException {
 		this.udpServer = new UDPServer(this.agent);
 		this.connectionServer = new TCPServer(this.agent);
+	}
+	
+	/**
+     * This method prints both Addresses and UserSocket maps
+     */
+	protected void printAll() {
+		this.mapAddresses.printAll();
+		this.mapSockets.printAll();
 	}
 }

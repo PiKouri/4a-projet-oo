@@ -5,6 +5,8 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.Date;
 
+import javax.imageio.ImageIO;
+
 import datatypes.*;
 import userInterface.User;
 
@@ -74,11 +76,11 @@ public class UserSocket extends Thread {
 	}
 	
 	public void waitForMessage() {
-		Text message;
+		Message message;
 		while (this.running) {
 			try {
-				message=(Text) this.is.readObject();
-				this.agent.getMessageManager().receiveText(this,message);
+				message=(Message) this.is.readObject();
+				this.agent.getMessageManager().receiveMessage(this,message);
 			} catch (Exception e) {}
 		}
 	}
@@ -90,7 +92,12 @@ public class UserSocket extends Thread {
 	}
 	
 	public void sendImage(Image image) {
-		
+		try {
+			this.os.writeObject(image);
+		} catch (IOException e1) {
+			System.out.println("Error when trying to send Image message");
+			e1.printStackTrace();
+		}
 	}
 	
 	public void sendText(Text text) {

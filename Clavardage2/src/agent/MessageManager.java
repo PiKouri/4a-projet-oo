@@ -4,7 +4,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+
 import datatypes.*;
+import userInterface.Interface;
 import userInterface.User;
 
 public class MessageManager {
@@ -35,35 +40,35 @@ public class MessageManager {
 	/**
 	 * This methode is used when receiving a Message (File, Text or Image)
 	 * 
-	 * @param message
+	 * @param us UserSocket
+	 * @param message Message
 	 * */
-	protected void receiveMessage(Message message) {
+	protected void receiveMessage(UserSocket us, Message message) {
 		// TODO
-		
-		/*if (message.isFile()) receiveFile(message);
-		if (message.isText()) receiveText(message);
-		if (message.isImage()) receiveImage(message);
-		*/
-		
+		if (message.isFile()) receiveFile(us,(File)message);
+		if (message.isText()) receiveText(us,(Text)message);
+		if (message.isImage()) receiveImage(us,(Image)message);	
 		
 	}
 	
 	/**
 	 * This methode is used when receiving a File message
 	 * 
+	 * @param us UserSocket
 	 * @param file
 	 * */
-	protected void receiveFile(File file) {
+	protected void receiveFile(UserSocket us, File file) {
 		// TODO
 	}
 	
 	/**
 	 * This methode is used when receiving a Text message
 	 * 
+	 * @param us UserSocket
 	 * @param text
 	 * */
 	protected void receiveText(UserSocket us, Text text) {
-		// TODO
+		// A changer avec l'interface graphique
 		User user = this.agent.getNetworkManager().socketResolve(us);
 		System.out.printf("%s : %s \n", user.getUsername(), text.getText());
 	}
@@ -71,11 +76,14 @@ public class MessageManager {
 	/**
 	 * This methode is used when receiving a Image message
 	 * 
+	 * @param us UserSocket
 	 * @param image
 	 * */
-	protected void receiveImage(Image image) {
+	protected void receiveImage(UserSocket us, Image image) {
 		// TODO
-			
+		User user = this.agent.getNetworkManager().socketResolve(us);
+		System.out.printf("%s : \n", user.getUsername());
+		Interface.display(this.agent.me.getUsername()+ " got this image from " + user.getUsername(), image.getImage());
 	}
 	
 	/**
@@ -88,6 +96,7 @@ public class MessageManager {
 		// TODO
 		UserSocket us = this.agent.getNetworkManager().getSocket(dest);
 		if (message.isText()) us.sendText((Text) message);
+		if (message.isImage()) us.sendImage((Image) message);
 	}
 	
 	

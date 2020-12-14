@@ -127,9 +127,6 @@ public class UDPServer extends Thread {
 				// +Attente de la mise à jour de sa liste de sockets
 				try {
 					Socket sock = new Socket(address, Agent.defaultPortNumber);
-					synchronized(this.agent.getMessageManager()) {try {
-						this.agent.getMessageManager().wait();
-					} catch (InterruptedException e) {}}
 					this.agent.getNetworkManager().newActiveUserSocket(sock);
 				} catch (IOException e1) {
 					System.out.printf("Could not create socket when trying to connect ERROR\n");
@@ -155,9 +152,6 @@ public class UDPServer extends Thread {
 				break;
 			case "canAccess" : 
 				this.agent.getUserStatusManager().userConnect(username, address);
-				break;
-			case "okAccess" :
-				synchronized(this.agent.getMessageManager()) {this.agent.getMessageManager().notifyAll();}
 				break;
 			case "updateDisconnectedUsers" :
 				String disconnectedAddress = strip[2];

@@ -1,14 +1,26 @@
 package userInterface;
+import java.awt.AWTException;
+import java.awt.HeadlessException;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Scanner;
 
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+
 import agent.Agent;
-import datatypes.MyMap;
+import datatypes.Image;
 import datatypes.Text;
 
 public class Interface {
@@ -91,8 +103,13 @@ public class Interface {
 					String dest = enterName();
 					String text = enterText();
 					agent.sendMessage(dest, new Text(text));
+				}else if (in.equals("sendImage")) {
+					String dest = enterName();
+					try {
+						JFrame test = new Browse(agent,dest);
+					} catch (Exception e) {}
 				} else if (in.equals("end")) {
-					leave = true;
+					leave = true; 
 					break;
 				} else if (in.equals("reconnect")) {
 					System.out.printf("\n\nReconnection\n\n");
@@ -102,19 +119,22 @@ public class Interface {
 			agent.disconnect();
 			try {Thread.sleep(100);} catch (Exception e) {} // Attente pour affichage
 			if (leave) break;
-		}		
+		}
+		System.exit(0);
 	}
 	
-	public static void main(String[] args) throws IOException, InterruptedException {
-		/*Map<InetAddress,User> test=new HashMap<>();
-		User me = new User("Moi");
-		InetAddress test1 = InetAddress.getByName("192.168.1.1");
-		InetAddress test2 = InetAddress.getByName("192.168.1.1");
-		System.out.printf("%s, %s\n", test1,test2);
-		test.put(test1,me);
-		User res = test.get(test2);
-		System.out.printf("%s\n",res.getUsername());*/
+	public static void display(String title, ImageIcon image) {
+		JLabel label = new JLabel(image);
+		JFrame f = new JFrame(title);
+		f.getContentPane().add(label);
+		f.pack();
+		f.setVisible(true);
+	}
+	
+	public static void main(String[] args) throws IOException, InterruptedException, HeadlessException, AWTException {
 		commandsDebugging();
+		/*JFrame test = new Browse(new Agent(new User("")),"");
+		test.setVisible(true);*/
 	}
 
 }

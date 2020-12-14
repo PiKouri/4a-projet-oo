@@ -93,7 +93,7 @@ public class UDPClient {
     /**
      * This method sends a UDP message to a specific address
      *  
-     * @param message Message that we want to send in broadcast
+     * @param udpMessage Message that we want to send in broadcast
      * @param address Address to which we want to send the message
      */
     public void sendUDP(String udpMessage, InetAddress address){
