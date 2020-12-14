@@ -1,3 +1,5 @@
+package userInterface;
+
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
 
@@ -10,10 +12,15 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.SwingConstants;
 import java.awt.FlowLayout;
+import javax.swing.AbstractAction;
+import java.awt.event.ActionEvent;
+import javax.swing.Action;
 
-public class Window2 extends JFrame {
+public class Window_2 extends JFrame {
 
 	private JPanel contentPane;
+	private final Action action_modifier_pseudo = new SwingAction_modifier_pseudo(this);
+	private final Action action_voir_utilisateurs = new SwingAction_voir_utilisateurs(this);
 
 	/**
 	 * Launch the application.
@@ -22,7 +29,7 @@ public class Window2 extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					Window2 frame = new Window2();
+					Window_2 frame = new Window_2();
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -34,7 +41,7 @@ public class Window2 extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public Window2() {
+	public Window_2() {
 		//Nom de la fenetre
 				super("ChatSystem_Accueil_connecte");
 				
@@ -54,11 +61,13 @@ public class Window2 extends JFrame {
 				        
 				//Contenu des items de la menu bar
 				JMenuItem m11 = new JMenuItem("Modifier mon pseudo");
+				m11.setAction(action_modifier_pseudo);
 				JMenuItem m12 = new JMenuItem("Me déconnecter");
 				m1.add(m11);
 				m1.add(m12);
 				        
 				JMenuItem m21 = new JMenuItem("Voir les utilisateurs de MyChat");
+				m21.setAction(action_voir_utilisateurs);
 				m2.add(m21);
 				contentPane.add(BorderLayout.NORTH, mb);
 				
@@ -67,11 +76,37 @@ public class Window2 extends JFrame {
 				FlowLayout flowLayout = (FlowLayout) panel1.getLayout();
 				flowLayout.setVgap(100);
 				//texte du centre
-				JLabel label = new JLabel("Bonjour 'pseudo' \n Bienvenue sur ChatSystem");
+				JLabel label = new JLabel("<html> Bonjour 'pseudo' <br> Bienvenue sur ChatSystem </html>");
 				panel1.add(label);
 				contentPane.add(BorderLayout.CENTER, panel1);
 				
 				
 	}
 
+	private class SwingAction_modifier_pseudo extends AbstractAction {
+		private Window_2 window;
+		public SwingAction_modifier_pseudo(Window_2 w) {
+			window=w;
+			putValue(NAME, "Modifier mon pseudo...");
+			putValue(SHORT_DESCRIPTION, "Some short description");
+		}
+		public void actionPerformed(ActionEvent e) {
+			Window_1 w1=new Window_1();
+			w1.setVisible(true);
+			window.setVisible(false);
+		}
+	}
+	private class SwingAction_voir_utilisateurs extends AbstractAction {
+		private Window_2 window;
+		public SwingAction_voir_utilisateurs(Window_2 w) {
+			window=w;
+			putValue(NAME, "Voir les utilisateurs de MyChat");
+			putValue(SHORT_DESCRIPTION, "Some short description");
+		}
+		public void actionPerformed(ActionEvent e) {
+			Window_3 w3=new Window_3();
+			w3.setVisible(true);
+			window.setVisible(false);
+		}
+	}
 }

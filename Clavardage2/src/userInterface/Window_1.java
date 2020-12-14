@@ -1,3 +1,4 @@
+package userInterface;
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
@@ -21,9 +22,10 @@ import java.awt.event.ActionEvent;
 import javax.swing.Action;
 import java.awt.event.ActionListener;
 
-public class Window1 extends JFrame {
+public class Window_1 extends JFrame {
 
 	private String login;
+	private JLabel lab=new JLabel("");
 	
 	private JPanel contentPane;
 	private final Action action = new SwingAction();
@@ -35,7 +37,7 @@ public class Window1 extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					Window1 frame = new Window1();
+					Window_1 frame = new Window_1();
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -47,7 +49,7 @@ public class Window1 extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public Window1() {
+	public Window_1() {
 		super("ChatSystem_Accueil_choix_pseudo");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 450, 300);
@@ -58,7 +60,9 @@ public class Window1 extends JFrame {
 		
 		// Création pannel central
 		JPanel panel1 = new JPanel();
-		
+		JPanel panel2 = new JPanel();
+
+		panel2.add(this.lab);
 		
 				
 		JLabel label = new JLabel("Entrez votre pseudo");
@@ -70,25 +74,18 @@ public class Window1 extends JFrame {
 		JButton valider = new JButton("Valider");
 		valider.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				String t=tf.getText();
+				System.out.println(t);
+				// errorMessage();
 			}
 		});
+		
+		
 		valider.setAction(action);
 		panel1.add(valider);
-						
-				
-		
 		
 		contentPane.add(BorderLayout.CENTER, panel1);
-
-
-		this.login = tf.getText();
-
-
-
-
-		
-		
-		
+		contentPane.add(BorderLayout.SOUTH, panel2);
 		
 		
 		
@@ -97,10 +94,15 @@ public class Window1 extends JFrame {
 
 	private class SwingAction extends AbstractAction {
 		public SwingAction() {
-			putValue(NAME, "SwingAction");
+			putValue(NAME, "Valider");
 			putValue(SHORT_DESCRIPTION, "Some short description");
 		}
 		public void actionPerformed(ActionEvent e) {
 		}
 	}
+	
+	public void errorMessage() {
+		lab.setText("<html> Ce pseudo est déjà utilisé  <br> Veuillez en choisir un autre SVP </html>");
+	}
+	
 }
