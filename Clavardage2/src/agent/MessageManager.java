@@ -44,8 +44,10 @@ public class MessageManager {
 	 * @param message Message
 	 * */
 	protected void receiveMessage(UserSocket us, Message message) {
-		// TODO
-		if (message.isFile()) receiveFile(us,(File)message);
+		User user = this.agent.getNetworkManager().socketResolve(us);
+		message.setSender(user);
+		this.getMessages(user).add(message);
+		if (message.isFile()) receiveFile(us,(MyFile)message);
 		if (message.isText()) receiveText(us,(Text)message);
 		if (message.isImage()) receiveImage(us,(Image)message);	
 		
@@ -57,8 +59,10 @@ public class MessageManager {
 	 * @param us UserSocket
 	 * @param file
 	 * */
-	protected void receiveFile(UserSocket us, File file) {
+	protected void receiveFile(UserSocket us, MyFile file) {
 		// TODO
+		User user = this.agent.getNetworkManager().socketResolve(us);
+		System.out.printf("%s - %s : %s \n", file.getDate(), user.getUsername(), file.getFilename());
 	}
 	
 	/**
@@ -70,7 +74,7 @@ public class MessageManager {
 	protected void receiveText(UserSocket us, Text text) {
 		// A changer avec l'interface graphique
 		User user = this.agent.getNetworkManager().socketResolve(us);
-		System.out.printf("%s : %s \n", user.getUsername(), text.getText());
+		System.out.printf("%s - %s : %s \n", text.getDate(), user.getUsername(), text.getText());
 	}
 
 	/**
@@ -80,9 +84,9 @@ public class MessageManager {
 	 * @param image
 	 * */
 	protected void receiveImage(UserSocket us, Image image) {
-		// TODO
+		// A changer avec l'interface graphique
 		User user = this.agent.getNetworkManager().socketResolve(us);
-		System.out.printf("%s : \n", user.getUsername());
+		System.out.printf("%s - %s : \n", image.getDate(), user.getUsername());
 		Interface.display(this.agent.me.getUsername()+ " got this image from " + user.getUsername(), image.getImage());
 	}
 	
@@ -93,10 +97,9 @@ public class MessageManager {
 	 * @param message Message
 	 * */
 	protected void sendMessage(User dest, Message message) {
-		// TODO
+		this.getMessages(dest).add(message);
 		UserSocket us = this.agent.getNetworkManager().getSocket(dest);
-		if (message.isText()) us.sendText((Text) message);
-		if (message.isImage()) us.sendImage((Image) message);
+		us.send(message);
 	}
 	
 	
@@ -112,5 +115,9 @@ public class MessageManager {
 	 * */
 	protected ArrayList<Message> getMessages(User user){
 		return this.mapMessages.get(user);
+	}
+	
+	protected void initMessages(User user){
+		this.mapMessages.put(user,new ArrayList<Message>());
 	}
 }

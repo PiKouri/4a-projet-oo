@@ -1,7 +1,10 @@
 package userInterface;
+import java.io.Serializable;
 import java.net.InetAddress;
 
-public class User {
+public class User implements Serializable {
+	private static final long serialVersionUID = 1L;
+	
 	private String username;
 	private InetAddress address = null;
 	

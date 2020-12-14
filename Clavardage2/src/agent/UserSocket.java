@@ -88,35 +88,12 @@ public class UserSocket extends Thread {
 /*-----------------------Méthodes - Réception des messages TCP-------------------------*/
 	
 	public void send(Message message) {
-		
-	}
-	
-	public void sendImage(Image image) {
 		try {
-			this.os.writeObject(image);
+			this.os.writeObject(message);
 		} catch (IOException e1) {
 			System.out.println("Error when trying to send Image message");
 			e1.printStackTrace();
 		}
 	}
-	
-	public void sendText(Text text) {
-		try {
-			this.os.writeObject(text);
-		} catch (IOException e1) {
-			System.out.println("Error when trying to send Text message");
-			e1.printStackTrace();
-		}
-	}
-	
-	public void sendFile(File file){
-		
-	}
-	
-	public void sendDate(Date date) {
-		
-	}
-	
-	
 	
 }

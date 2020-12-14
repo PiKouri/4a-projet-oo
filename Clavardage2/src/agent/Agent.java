@@ -47,7 +47,6 @@ public class Agent{
      * <br>UDP Message template : "connect username"
      * 
      * @param me Object User representing the actual user
-     * 
      */
 	public Agent(User me) throws IOException {
 		this.me = me;
@@ -134,7 +133,9 @@ public class Agent{
      * @return List of all messages
      */
 	public ArrayList<Message> getMessageHistory(String username){
-		return this.messageManager.getMessages(this.usernameManager.nameResolve(username));
+		User u = this.usernameManager.nameResolve(username);
+		if (u!=null)return this.messageManager.getMessages(u);
+		else return null; // Erreur sur le nom, Impossible avec l'interface graphique normalement
 	}
 	
 	/**
@@ -186,6 +187,13 @@ public class Agent{
 		} else {
 			if (Agent.debug) System.out.printf("\nNot disconnected, cannot reconnect\n");
 		}
+	}
+	
+	/**
+     * Get the User associated to the Agent
+     */
+	public User getUser() {
+		return this.me;
 	}
 
 	

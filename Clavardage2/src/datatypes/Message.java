@@ -3,6 +3,8 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import userInterface.User;
+
 public class Message implements Serializable {
 	
 	
@@ -16,12 +18,19 @@ public class Message implements Serializable {
 		
 	/**Date of the message*/
 	private String date;
+	/**Sender*/
+	private User sender;
 	
 	
 /*---------------------------Attributs---------------------------*/
 	
-	
-	public Message() {
+	/**
+     * Constructor for the class Message
+     * @param sender User who sends the message
+     * 
+     */
+	public Message(User sender) {
+		this.sender=sender;
 		this.date = Message.dtf.format(LocalDateTime.now());
 	}
 	
@@ -37,12 +46,34 @@ public class Message implements Serializable {
 		return this.date;
 	}
 	
+	/**
+	 * This method returns the Sender of the message
+	 * 
+	 * @return Sender of the message
+	 */
+	public User getSender() {
+		return this.sender;
+	}
+	
+	
+/*---------------------------Setteurs---------------------------*/
+	
+	
+	/**
+	 * This method sets the Sender of the message
+	 * 
+	 * @param sender Sender of the message
+	 */
+	public void setSender(User sender) {
+		this.sender=sender;
+	}
+	
 	
 /*---------------------------Check type---------------------------*/
 	
 	
 	public boolean isFile(){
-		return (this instanceof File);
+		return (this instanceof MyFile);
 	}
 	
 	public boolean isImage(){

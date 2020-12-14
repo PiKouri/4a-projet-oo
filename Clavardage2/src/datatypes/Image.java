@@ -6,20 +6,17 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
+import userInterface.User;
+
 public class Image extends Message {
 
 	private static final long serialVersionUID = 1L;
 	
 	private ImageIcon image;
 	
-	public Image(String filename) {
-		super();
-		try {
-			this.image=new ImageIcon(ImageIO.read(new File(filename)));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public Image(User u, String filename) {
+		super(u);
+		try {this.image=new ImageIcon(ImageIO.read(new File(filename)));} catch (IOException e) {}
 	}
 	
 	public ImageIcon getImage() {

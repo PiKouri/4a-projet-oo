@@ -9,11 +9,12 @@ import javax.swing.JFrame;
 
 import agent.Agent;
 import datatypes.Image;
+import datatypes.MyFile;
 
-public class Browse extends JFrame implements ActionListener {
+public class BrowseFile extends JFrame implements ActionListener {
 	private Agent agent;
 	private String dest;
-	public Browse(Agent agent,String dest){
+	public BrowseFile(Agent agent,String dest){
 		this.agent=agent;
 		this.dest=dest;
 		JButton bouton = new JButton("Browse");
@@ -27,7 +28,7 @@ public class Browse extends JFrame implements ActionListener {
 		if (i!=1) {
 			String filename = jc.getSelectedFile().getAbsolutePath() ;
 			System.out.println(filename);
-			agent.sendMessage(dest,new Image(filename));
+			agent.sendMessage(dest,new MyFile(this.agent.getUser(),filename));
 		}
 	}
 	public void actionPerformed(ActionEvent e) {

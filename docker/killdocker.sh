@@ -1,3 +1,5 @@
 #!/bin/bash
-sudo docker stop $1 > /dev/null
-sudo docker rm $1 > /dev/null
+for i in `seq $1 $2`; do
+sudo docker stop Clav$i > /dev/null
+sudo docker rm Clav$i > /dev/null; done
+

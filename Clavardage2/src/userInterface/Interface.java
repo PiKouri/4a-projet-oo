@@ -21,6 +21,8 @@ import javax.swing.JLabel;
 
 import agent.Agent;
 import datatypes.Image;
+import datatypes.Message;
+import datatypes.MyFile;
 import datatypes.Text;
 
 public class Interface {
@@ -83,7 +85,7 @@ public class Interface {
 			String in = "";
 			while (!in.equals("disconnect")) {
 				System.out.println("\n---------------Enter commands---------------\n");
-				System.out.println("\nchangeUsername | printAll | send | disconnect | reconnect | end\n");
+				System.out.println("\nchangeUsername | printAll | sendText/Img/File | printMsg | disconnect | reconnect | end\n");
 				in = scanner.next();
 				if (in.equals("changeUsername")) {
 					System.out.print("\nChange username : ");
@@ -99,15 +101,28 @@ public class Interface {
 					for (String activeName : agent.viewDisconnectedUsernames()) {
 						System.out.printf("%s | ",activeName);
 					} System.out.println();
-				}else if (in.equals("send")) {
+				}else if (in.equals("sendText")) {
 					String dest = enterName();
 					String text = enterText();
-					agent.sendMessage(dest, new Text(text));
-				}else if (in.equals("sendImage")) {
+					agent.sendMessage(dest, new Text(me, text));
+				}else if (in.equals("sendImg")) {
 					String dest = enterName();
 					try {
-						JFrame test = new Browse(agent,dest);
+						JFrame test = new BrowseImage(agent,dest);
 					} catch (Exception e) {}
+				}else if (in.equals("sendFile")) {
+					String dest = enterName();
+					try {
+						JFrame test = new BrowseFile(agent,dest);
+					} catch (Exception e) {}
+				}else if (in.equals("printMsg")) {
+					String dest = enterName();
+					System.out.printf("\n\nMessage avec %s\n\n",dest);
+					for (Message m : agent.getMessageHistory(dest)) {
+						if (m.isText()) System.out.printf("%s - %s : %s\n", m.getDate(), m.getSender(),((Text)m).getText());
+						if (m.isImage()) System.out.printf("%s - %s : IMAGE\n", m.getDate(), m.getSender());
+						if (m.isFile()) System.out.printf("%s - %s : %s\n", m.getDate(), m.getSender(),((MyFile)m).getFilename());
+					};
 				} else if (in.equals("end")) {
 					leave = true; 
 					break;

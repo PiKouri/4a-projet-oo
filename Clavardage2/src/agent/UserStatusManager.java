@@ -46,6 +46,7 @@ public class UserStatusManager {
 		if (verifyUniqAddress(this.disconnectedUsers,address) && verifyUniqAddress(this.activeUsers,address)) { // Si l'addresse n'est pas déjà connue, on l'ajoute
 			User user = new User(username,address);
 			this.disconnectedUsers.add(user);
+			this.agent.getMessageManager().initMessages(user);
 			this.agent.getUsernameManager().addUsername(user, username);
 			this.agent.getNetworkManager().addAddress(user, address);
 		}
@@ -83,6 +84,7 @@ public class UserStatusManager {
 				this.activeUsers.add(user);
 				if (Agent.debug) System.out.printf("New address : %s -> %s\n", address, user.getUsername());
 				this.agent.getNetworkManager().addAddress(user, address);
+				this.agent.getMessageManager().initMessages(user);
 				synchronized(this.agent.getNetworkManager()) {this.agent.getNetworkManager().notifyAll();}
 			} else {
 				 {
