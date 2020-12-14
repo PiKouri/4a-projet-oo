@@ -120,4 +120,13 @@ public class MyMap <ThisUser, Value> {
 	public boolean containsValue(Value value) {
 		return this.map2.containsKey(value);
 	}
+	
+	/**
+	 * This method print all entries
+	 */
+	public void printAll() {
+		for (ThisUser u: this.map1.keySet()) {
+			System.out.printf("%s -> %s\n", u, this.map1.get(u));
+		}
+	}
 }

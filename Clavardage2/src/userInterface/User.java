@@ -25,4 +25,8 @@ public class User {
 	public InetAddress getAddress() { // A modifier sur le diagramme
 		return this.address;
 	}
+	
+	public String toString() {
+		return this.getUsername();
+	}
 }

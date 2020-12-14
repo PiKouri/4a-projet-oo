@@ -45,6 +45,7 @@ public class MessageManager {
 		if (message.isImage()) receiveImage(message);
 		*/
 		
+		
 	}
 	
 	/**
@@ -61,9 +62,10 @@ public class MessageManager {
 	 * 
 	 * @param text
 	 * */
-	protected void receiveText(Text text) {
+	protected void receiveText(UserSocket us, Text text) {
 		// TODO
-		
+		User user = this.agent.getNetworkManager().socketResolve(us);
+		System.out.printf("%s : %s \n", user.getUsername(), text.getText());
 	}
 
 	/**
@@ -74,6 +76,18 @@ public class MessageManager {
 	protected void receiveImage(Image image) {
 		// TODO
 			
+	}
+	
+	/**
+	 * This methode is used when sending a Message (File, Text or Image)
+	 * 
+	 * @param dest Destination user
+	 * @param message Message
+	 * */
+	protected void sendMessage(User dest, Message message) {
+		// TODO
+		UserSocket us = this.agent.getNetworkManager().getSocket(dest);
+		if (message.isText()) us.sendText((Text) message);
 	}
 	
 	

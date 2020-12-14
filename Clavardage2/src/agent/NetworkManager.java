@@ -3,6 +3,7 @@ package agent;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
 import datatypes.MyMap;
 import userInterface.User;
@@ -33,6 +34,7 @@ public class NetworkManager {
  * "tellUsernameAvailability username true/false" -> Réponse notifiant la disponibilité(ou non) de l'username
  * "canAccess username" -> Après avoir reçu un "connect", renvoie "canAccess" pour notifier notre adresse IP au nouvel arrivant
  * "updateDisconnectedUsers username address" -> Après avoir reçu un "connect", met à jour les utilisateurs déconnectés du nouvel arrivant
+ * "okAccess username" -> Après avoir reçu un "canAccess", renvoie "okAccess" pour notifier la réception de l'addresse IP
 */
 
 /*-----------------------Constructeurs-------------------------*/
@@ -130,7 +132,9 @@ public class NetworkManager {
      * @param socket Socket from which we create the UserSocket
      */
 	protected void newActiveUserSocket(Socket socket) {
-		if (Agent.debug) System.out.printf("New socket connected\n");
+		User user = this.mapAddresses.getUser(socket.getInetAddress());
+		if (Agent.debug) System.out.printf("New socket connected: "+user.getUsername()+"\n");
+		this.mapSockets.putUser(user, new UserSocket(user, this.agent, socket));
 	}
 		
 	
@@ -141,7 +145,7 @@ public class NetworkManager {
      * 
      * @return MyMap of known addresses associated to users
      */
-	protected MyMap<User, InetAddress> getMapAddresses() {
+	protected MyMap<User, InetAddress> getMapAddresses() { // A voir pour enlever
 		return this.mapAddresses;
 	}
 	
@@ -168,6 +172,24 @@ public class NetworkManager {
 	}
 	
 	/**
+     * This method returns the UserSocket associated to this user
+     *
+     * @param user 
+     */
+	protected UserSocket getSocket(User user) {
+		return this.mapSockets.getValue(user);
+	}
+	
+	/**
+     * This method returns the IP Address associated to this user
+     *
+     * @param user 
+     */
+	protected InetAddress getAddress(User user) {
+		return this.mapAddresses.getValue(user);
+	}
+	
+	/**
      * This method returns the availability of the username that was checked
      * 
      * @return True if the last checked username is available
@@ -182,6 +204,7 @@ public class NetworkManager {
      * @param user User that we want to remove 
      */
 	protected void removeSocket(User user) {
+		this.mapSockets.getValue(user).interrupt();
 		this.mapSockets.remove(user);
 	}
 	
@@ -203,6 +226,8 @@ public class NetworkManager {
 		this.connectionServer.interrupt();
 		this.connectionServer=null; // supprime le TCPServer et les Sockets associés
 		this.udpServer=null; // supprime l'UDPServer et les Sockets associés
+		for (User u : this.agent.getUserStatusManager().getActiveUsers())
+			this.removeSocket(u);; // interrompt tous les UserSockets
 		this.mapSockets.clear();
 	}
 	

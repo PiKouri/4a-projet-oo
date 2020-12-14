@@ -1,6 +1,7 @@
 package agent;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -141,10 +142,15 @@ public class Agent{
      * <p>This method will use the receiver attribute of the class Message
      * to know the destination
      * 
+     * @param dest Destination user (as String)
      * @param message Message that the user wants to send
      */
-	public void sendMessage(Message message) {
+	public void sendMessage(String dest, Message message) {
 		// TODO
+		// A faire : verifier nom
+		//InetAddress destAddress=this.networkManager.getAddress((this.usernameManager.nameResolve(dest)));
+		User user = this.usernameManager.nameResolve(dest);
+		this.messageManager.sendMessage(user,message);
 	}
 	
 	/**

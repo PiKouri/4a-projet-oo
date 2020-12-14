@@ -54,7 +54,7 @@ public class UsernameManager {
 			// On vérifie la disponibilité du nom auprès des autres utilisateurs
 			this.agent.getNetworkManager().sendBroadcast("checkUsernameAvailability "+username);			
 			try {
-				synchronized(this.agent) {this.agent.wait(Agent.timeout);}
+				synchronized(this) {this.wait(Agent.timeout);}
 			} catch (InterruptedException e) {} // On attend la réponse des autres utilisateurs
 			ok = this.agent.getNetworkManager().getLastUsernameAvailability();
 			if (fin <= System.currentTimeMillis()) { // Timeout

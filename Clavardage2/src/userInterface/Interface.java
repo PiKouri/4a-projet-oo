@@ -3,10 +3,13 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 import agent.Agent;
 import datatypes.MyMap;
+import datatypes.Text;
 
 public class Interface {
 
@@ -34,6 +37,22 @@ public class Interface {
 		for (User u : test) System.out.println(u.getUsername());
 	}*/
 	
+	public static String enterName() {
+		System.out.print("Enter name: ");
+		@SuppressWarnings("resource")
+		Scanner scanner = new Scanner(System.in);
+		String name = scanner.next();
+		return name;
+	}
+	
+	public static String enterText() {
+		System.out.print("Enter text: ");
+		@SuppressWarnings("resource")
+		Scanner scanner = new Scanner(System.in);
+		String text = scanner.next();
+		return text;
+	}
+	
 	public static void commandsDebugging() throws IOException {
 		//testMyMap();
 		//testVerifyUniqAddress();
@@ -52,24 +71,12 @@ public class Interface {
 			String in = "";
 			while (!in.equals("disconnect")) {
 				System.out.println("\n---------------Enter commands---------------\n");
-				System.out.println("\nchangeUsername | printAll | printActiveUsers | printDisconnectedUsers | getOwnIP | disconnect | reconnect | end\n");
+				System.out.println("\nchangeUsername | printAll | send | disconnect | reconnect | end\n");
 				in = scanner.next();
 				if (in.equals("changeUsername")) {
 					System.out.print("\nChange username : ");
 					String name2 = scanner.next();
 					agent.chooseUsername(name2);
-				} else if (in.equals("printActiveUsers")) {
-					System.out.printf("\nActive Users : ");
-					for (String activeName : agent.viewActiveUsernames()) {
-						System.out.printf("%s | ",activeName);
-					} System.out.println();
-				} else if (in.equals("printDisconnectedUsers")) {
-					System.out.printf("\nDisconnected Users : ");
-					for (String activeName : agent.viewDisconnectedUsernames()) {
-						System.out.printf("%s | ",activeName);
-					} System.out.println();
-				} else if (in.equals("getOwnIP")) {
-					System.out.printf("\nMy IP is : %s", InetAddress.getLocalHost().getHostAddress());
 				}else if (in.equals("printAll")) {
 					System.out.printf("\nMy IP is : %s | My Name is : %s\n", InetAddress.getLocalHost().getHostAddress(),me.getUsername());
 					System.out.printf("\nActive Users : ");
@@ -80,6 +87,10 @@ public class Interface {
 					for (String activeName : agent.viewDisconnectedUsernames()) {
 						System.out.printf("%s | ",activeName);
 					} System.out.println();
+				}else if (in.equals("send")) {
+					String dest = enterName();
+					String text = enterText();
+					agent.sendMessage(dest, new Text(text));
 				} else if (in.equals("end")) {
 					leave = true;
 					break;
@@ -95,6 +106,14 @@ public class Interface {
 	}
 	
 	public static void main(String[] args) throws IOException, InterruptedException {
+		/*Map<InetAddress,User> test=new HashMap<>();
+		User me = new User("Moi");
+		InetAddress test1 = InetAddress.getByName("192.168.1.1");
+		InetAddress test2 = InetAddress.getByName("192.168.1.1");
+		System.out.printf("%s, %s\n", test1,test2);
+		test.put(test1,me);
+		User res = test.get(test2);
+		System.out.printf("%s\n",res.getUsername());*/
 		commandsDebugging();
 	}
 

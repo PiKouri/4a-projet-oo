@@ -1,44 +1,45 @@
 package datatypes;
-import java.net.InetAddress;
-import java.util.Date;
+import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
-public class Message {
+public class Message implements Serializable {
+	
+	
+	private static final long serialVersionUID = 1L;
+	
+
+/*---------------------------Attributs---------------------------*/
+	
+	/**DateTimeFormatter*/
+	public static DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+		
+	/**Date of the message*/
+	private String date;
+	
 	
 /*---------------------------Attributs---------------------------*/
 	
-	private int size;
-	private Date date;
-	private InetAddress sender;
-	private InetAddress receiver;
+	
+	public Message() {
+		this.date = Message.dtf.format(LocalDateTime.now());
+	}
 	
 	
 /*---------------------------Getteurs---------------------------*/
 	
-	public int getSize() {
-		return this.size;
-	}
-	
-	public Date getDate() {
+	/**
+	 * This method returns the Date of creation of the message
+	 * 
+	 * @return Date of creation of the message
+	 */
+	public String getDate() {
 		return this.date;
 	}
 	
-	public InetAddress getSender() {
-		return this.sender;
-	}
-	
-	public InetAddress getReceiver() {
-		return this.receiver;
-	}
-	
-	
-	
-/*---------------------------Setters---------------------------*/
-	
-	public void setDate(Date date) {
-		this.date = date;
-	}
 	
 /*---------------------------Check type---------------------------*/
+	
 	
 	public boolean isFile(){
 		return (this instanceof File);

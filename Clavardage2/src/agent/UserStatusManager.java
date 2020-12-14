@@ -61,7 +61,6 @@ public class UserStatusManager {
 		if (!this.agent.isFirstConnection) {
 			User user = this.agent.getUsernameManager().nameResolve(username);
 			//this.mapUsernames.remove(user);
-			///////////////////////////////////Pas encore fait/////////////////////////////////////////this.mapSockets.getValue(user).interrupt();
 			this.agent.getNetworkManager().removeSocket(user);
 			this.activeUsers.remove(user);
 			this.disconnectedUsers.add(user);
@@ -82,6 +81,7 @@ public class UserStatusManager {
 				User user = new User(username, address);
 				this.agent.getUsernameManager().addUsername(user, username);
 				this.activeUsers.add(user);
+				if (Agent.debug) System.out.printf("New address : %s | %s\n", address, user.getUsername());
 				this.agent.getNetworkManager().addAddress(user, address);
 			} else {
 				 {

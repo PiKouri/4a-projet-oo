@@ -123,14 +123,18 @@ public class UDPServer extends Thread {
 			case "connect" :
 				this.agent.getNetworkManager().tellCanAccess(address);
 				this.agent.getUserStatusManager().userConnect(username, address);
+				// Attente pour éviter d'envoyer une liste non mis à jour
+				// +Attente de la mise à jour de sa liste de sockets
 				try {
 					Socket sock = new Socket(address, Agent.defaultPortNumber);
+					synchronized(this.agent.getMessageManager()) {try {
+						this.agent.getMessageManager().wait();
+					} catch (InterruptedException e) {}}
 					this.agent.getNetworkManager().newActiveUserSocket(sock);
 				} catch (IOException e1) {
 					System.out.printf("Could not create socket when trying to connect ERROR\n");
 				}
-				try {Thread.sleep(500);} catch (Exception e) {} 
-				// Attente pour éviter d'envoyer une liste non mis à jour
+				//try {Thread.sleep(500);} catch (Exception e) {} 
 				this.agent.getNetworkManager().tellDisconnectedUsers(address);
 				break;
 			case "disconnect" :
@@ -147,10 +151,13 @@ public class UDPServer extends Thread {
 			case "tellUsernameAvailability" : 
 				// On a demandé la disponibilité d'un nom et on reçoit la réponse
 				this.lastUsernameAvailability = Boolean.parseBoolean(strip[2]);
-				synchronized(this.agent) {this.agent.notifyAll();}
+				synchronized(this.agent.getUsernameManager()) {this.agent.getUsernameManager().notifyAll();}
 				break;
 			case "canAccess" : 
 				this.agent.getUserStatusManager().userConnect(username, address);
+				break;
+			case "okAccess" :
+				synchronized(this.agent.getMessageManager()) {this.agent.getMessageManager().notifyAll();}
 				break;
 			case "updateDisconnectedUsers" :
 				String disconnectedAddress = strip[2];
