@@ -1,0 +1,2 @@
+ERROR - 14:19:06: org.eclipse.emf.ecore.xmi.PackageNotFoundException: Package with uri 'null' not found. (file:///Clavardage/.classpath, 2, 12)
+ERROR - 14:19:06: org.eclipse.emf.ecore.xmi.PackageNotFoundException: Package with uri 'null' not found. (file:///Clavardage/.classpath, 2, 12)

@@ -4,12 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-
 import datatypes.*;
-import userInterface.Interface;
 import userInterface.User;
 
 public class MessageManager {
@@ -47,51 +42,11 @@ public class MessageManager {
 		User user = this.agent.getNetworkManager().socketResolve(us);
 		message.setSender(user);
 		this.getMessages(user).add(message);
-		if (message.isFile()) receiveFile(us,(MyFile)message);
-		if (message.isText()) receiveText(us,(Text)message);
-		if (message.isImage()) receiveImage(us,(Image)message);	
 		
 	}
 	
 	/**
-	 * This method is used when receiving a File message
-	 * 
-	 * @param us UserSocket
-	 * @param file
-	 * */
-	protected void receiveFile(UserSocket us, MyFile file) {
-		// TODO
-		User user = this.agent.getNetworkManager().socketResolve(us);
-		System.out.printf("%s - %s : %s \n", file.getDate(), user.getUsername(), file.getFilename());
-	}
-	
-	/**
-	 * This method is used when receiving a Text message
-	 * 
-	 * @param us UserSocket
-	 * @param text
-	 * */
-	protected void receiveText(UserSocket us, Text text) {
-		// A changer avec l'interface graphique
-		User user = this.agent.getNetworkManager().socketResolve(us);
-		System.out.printf("%s - %s : %s \n", text.getDate(), user.getUsername(), text.getText());
-	}
-
-	/**
-	 * This method is used when receiving a Image message
-	 * 
-	 * @param us UserSocket
-	 * @param image
-	 * */
-	protected void receiveImage(UserSocket us, Image image) {
-		// A changer avec l'interface graphique
-		User user = this.agent.getNetworkManager().socketResolve(us);
-		System.out.printf("%s - %s : \n", image.getDate(), user.getUsername());
-		Interface.display(this.agent.me.getUsername()+ " got this image from " + user.getUsername(), image.getImage());
-	}
-	
-	/**
-	 * This methode is used when sending a Message (File, Text or Image)
+	 * This method is used when sending a Message (File, Text or Image)
 	 * 
 	 * @param dest Destination user
 	 * @param message Message
