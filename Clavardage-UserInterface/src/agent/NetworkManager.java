@@ -154,8 +154,13 @@ public class NetworkManager {
 							user = this.nm.mapAddresses.getUser(socket.getInetAddress());
 						}
 					}
-					if (Agent.debug) System.out.printf("New socket connected: "+user.getUsername()+"\n");
-					this.nm.mapSockets.putUser(user, new UserSocket(user, this.agent, socket));
+					if (nm.getSocket(user)!=null) {
+						if (Agent.debug) System.out.printf("Ignored creating UserSocket: "+user.getUsername()+"\n");
+					}else {
+						if (Agent.debug) System.out.printf("New socket connected: "+user.getUsername()+"\n");
+						this.nm.mapSockets.putUser(user, new UserSocket(user, this.agent, socket));
+						if (Agent.debug) nm.printAll();
+					}
 				}
 			}
 			(new MyThread(this.agent,this,socket)).start();
@@ -268,7 +273,10 @@ public class NetworkManager {
      * This method prints both Addresses and UserSocket maps
      */
 	protected void printAll() {
+		System.out.println("Network maps");
+		System.out.println("	mapAddresses");
 		this.mapAddresses.printAll();
+		System.out.println("	mapSockets");
 		this.mapSockets.printAll();
 	}
 }

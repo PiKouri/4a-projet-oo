@@ -182,6 +182,7 @@ public class Agent{
 		if (this.isDisconnected) {
 			this.isFirstConnection=true;
 			this.isReconnection=true;
+			this.isDisconnected=false;
 			this.networkManager.startAll();
 		} else {
 			if (Agent.debug) System.out.printf("\nNot disconnected, cannot reconnect\n");
@@ -194,17 +195,11 @@ public class Agent{
 	public User getUser() {
 		return this.me;
 	}
-	
-	/**
-     * Get the User associated to the name
-     */
-	public User nameResolve(String name) {
-		return usernameManager.nameResolve(name);
-	}
 
 	
 /*-----------------------Méthodes - Getteurs des Managers-------------------------*/
 	// Protected pour rendre accessible seulement aux autres classes du même paquetage (agent)
+	
 	
 	/**
      * Get the UsernameManager associated to the Agent

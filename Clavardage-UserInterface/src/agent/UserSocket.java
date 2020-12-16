@@ -3,9 +3,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.Date;
-
-import javax.imageio.ImageIO;
 
 import datatypes.*;
 import userInterface.User;

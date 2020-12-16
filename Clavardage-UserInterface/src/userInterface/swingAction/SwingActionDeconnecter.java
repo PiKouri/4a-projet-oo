@@ -1,11 +1,11 @@
-package swingAction;
+package userInterface.swingAction;
 
 import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
 import userInterface.Interface;
-import userInterface.MyPanel;
+import userInterface.GraphicalElements.MyPanel;
 
 public class SwingActionDeconnecter extends AbstractAction {
 	private static final long serialVersionUID = 1L;
@@ -19,8 +19,8 @@ public class SwingActionDeconnecter extends AbstractAction {
 	}
 	public SwingActionDeconnecter(MyPanel panel) {
 		this.panel=panel;
-		putValue(NAME, "Deconnecter...");
-		putValue(SHORT_DESCRIPTION, "Some short description");
+		putValue(NAME, "Deconnecter");
+		putValue(SHORT_DESCRIPTION, "Me déconnecter");
 	}
 	public void actionPerformed(ActionEvent e) {
 		(new RunDeconnecter(panel)).start();

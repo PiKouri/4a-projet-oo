@@ -2,12 +2,17 @@ package userInterface;
 import java.awt.AWTException;
 import java.awt.HeadlessException;
 import java.io.IOException;
-import java.util.ArrayList;
 
 import javax.swing.JOptionPane;
 
 import agent.Agent;
 import datatypes.Message;
+import userInterface.GraphicalElements.MyFrame;
+import userInterface.GraphicalElements.MyPanel;
+import userInterface.GraphicalElements.Panel1;
+import userInterface.GraphicalElements.Panel2;
+import userInterface.GraphicalElements.Panel3;
+import userInterface.GraphicalElements.Panel4;
 
 public class Interface {
 
@@ -24,6 +29,21 @@ public class Interface {
 	
 	public static boolean isDisconnected = true;
 	
+	
+/**
+ * Informations sur l'interface
+ * 
+ * Dans une conversation, les fichiers et images sont cliquables => Enregistrer Sous
+ * Les images disposent d'un aperçu en mettant la souris sur le message 
+ * 
+ * 
+ * */
+	
+	
+
+/*-----------------------Méthodes - Mise à jour de notre MyFrame-------------------------*/
+	
+	
 	private static class RunAutoUpdate extends Thread {
 		private boolean running=true;
 		public RunAutoUpdate(){}
@@ -33,22 +53,21 @@ public class Interface {
 		    	try {Thread.sleep(Interface.autoUpdateTime/10);} catch (Exception e) {}
 		    	mainWindow.revalidate();
 		    	mainWindow.repaint();
+		    	mainWindow.setTitle(mainWindow.getContentPane().getName());
 	    	}
 	    }
 	}
 	
-	public static void switchPanel(MyPanel from, MyPanel toOpen) {
-		from.customSetVisible(false);
-		toOpen.customSetVisible(true);
+	private static void switchPanel(MyPanel from, MyPanel toOpen) {
 		mainWindow.setContentPane(toOpen);
 	}
 	
 	public static void popUp(String message) { // Quand quelqu'un change de pseudo par exemple
-		JOptionPane.showMessageDialog(null, message);
+		JOptionPane.showMessageDialog(Interface.mainWindow, message);
 	}
 	
 	
-	
+/*-----------------------Méthodes - Notifications depuis l'Agent-------------------------*/
 	
 	
 	public static void notifyUsernameNotAvailable(String name) {
@@ -63,51 +82,88 @@ public class Interface {
 	
 	public static void notifyUsernameChanged(String oldUsername, String newUsername) {
 		popUp("<html>L'utilisateur <i>"+oldUsername+"</i> a changé de pseudo -> <i>"+newUsername+"</i></html>");
-		if (panel4.destination.equals(oldUsername))panel4.setDestination(newUsername);
+		if (mainWindow.getContentPane().equals(panel4) && panel4.destination.equals(oldUsername)) {
+			panel4.setDestination(newUsername);
+			panel4.update();
+		} else if (mainWindow.getContentPane().equals(panel3)) {
+			panel3.update();
+		}
 	}
 	
 	public static void notifyUserDisconnected(String name) {
-		if (panel4.destination.equals(name))panel4.destDisconnected=true;
+		if (mainWindow.getContentPane().equals(panel4) && panel4.destination.equals(name)) {
+			panel4.destDisconnected=true;
+			panel4.update();
+		} 
+		else if (mainWindow.getContentPane().equals(panel3)) {
+			panel3.update();
+		}
 	}
 	
 	public static void notifyUserReconnected(String name) {
-		if (panel4.destination.equals(name))panel4.destDisconnected=false;
+		System.out.printf("%s reconnected - destination was %s\n", name, panel4.destination);
+		if (mainWindow.getContentPane().equals(panel4) && panel4.destination.equals(name)) {
+			panel4.destDisconnected=false;
+			panel4.update();
+		} else if (mainWindow.getContentPane().equals(panel3)) {
+			panel3.update();
+		}
 	}
 	
-	public static void displayOldUsername() {
-		panel1.displayOldUsername(me.getUsername());
+	public static void notifyNewMessage(Message msg) {
+		if (mainWindow.getContentPane().equals(panel4) && panel4.destination.equals(msg.getSender().getUsername())) {
+			panel4.nouveauMessage(msg);
+		} else {
+			String notif=
+					"<html>L'utilisateur <i>"+msg.getSender().getUsername()+"</i> vous a envoyé : "+
+			"<p>"+panel4.construireMessageString(msg)+"</p></html>";
+			popUp(notif);
+		}
 	}
 	
 	
+/*-----------------------Méthodes - Boutons des menus bar-------------------------*/
 	
 	
+	
+	public static void afficherInformationsInterface() {
+		popUp("<html><h>Informations sur l'interface<br>"+
+				" Dans une conversation, les <u>fichiers</u> et <u>images</u> sont cliquables => Enregistrer Sous<br>" + 
+				" Les images disposent d'un aperçu en mettant la souris sur le message </html>");
+	}
 	
 	public static void modifierPseudo(MyPanel from) {
 		panel1.emptyInfo();
-		displayOldUsername();
+		panel1.displayOldUsername(me.getUsername());
 		switchPanel(from, panel1);
 	}
 	
 	public static void ouvrirVoirUtilisateurs(MyPanel from) {
 		panel3.update();
-		voirUtilisateurs();
 		switchPanel(from, panel3);
 	}
 	
-	public static void voirUtilisateurs() {
-		//TODO
-		ArrayList<String> test = new ArrayList<String>();
-		test.add("Test1");
-		test.add("Test2");
-		panel3.updateActiveUsers(test);
-		ArrayList<String> test2 = new ArrayList<String>();
-		test2.add("Test3");
-		test2.add("Test4");
-		panel3.updateDisconnectedUsers(test2);
-		//panel3.updateActiveUsers(agent.viewActiveUsernames());
-		//panel3.updateDisconnectedUsers(agent.viewDisconnectedUsernames());
-		
+	public static void deconnecter(MyPanel from) {
+		isDisconnected=true;
+		panel4.destDisconnected=true;
+		try {agent.disconnect();} catch (IOException e) {
+			System.out.println("Coucou");
+		}
+		from.update();
 	}
+	
+	public static void reconnecter(MyPanel from) {
+		panel1.emptyInfo();
+		panel1.displayOldUsername(me.getUsername());
+		switchPanel(from, panel1);
+		isDisconnected=false;
+		try {agent.reconnect();} catch (IOException e) {}
+		from.update();
+	}	
+	
+	
+/*-----------------------Méthodes - Autres boutons-------------------------*/
+	
 	
 	public static void accueil(MyPanel from) {
 		panel2.update();
@@ -116,58 +172,39 @@ public class Interface {
 	
 	public static void ouvrirConversation(MyPanel from, String username, boolean isActive) {
 		panel4.setDestination(username);
-		panel4.update();
 		panel4.destDisconnected=!isActive;
+		panel4.update();
 		switchPanel(from, panel4);
 	}
 	
-	public static void voirMessages(String dest) {
-		if (dest != null) panel4.updateMessages(agent.getMessageHistory(dest));
-	}
-	
-	
-	
-	
-	
 	public static void envoyerMessage(String dest, Message message) {
 		agent.sendMessage(dest, message);
-	}
-	
-	public static void deconnecter(MyPanel from) {
-		from.disconnect();
-		try {agent.disconnect();} catch (IOException e) {}
-		switchPanel(from,from);
-		isDisconnected=true;
-		panel4.destDisconnected=true;
-	}
-	
-	public static void reconnecter(MyPanel from) {
-		panel1.emptyInfo();
-		displayOldUsername();
-		switchPanel(from, panel1);
-		try {agent.reconnect();} catch (IOException e) {}
-		panel2.update();
-		isDisconnected=false;
 	}
 	
 	public static void end() {
 		try {agent.disconnect();} catch (IOException e) {}
 	}
 	
+	
+/*-----------------------Méthodes - Méthodes utilitaires-------------------------*/
+	
+	
+	public static void voirUtilisateurs() {
+		panel3.updateActiveUsers(agent.viewActiveUsernames());
+		panel3.updateDisconnectedUsers(agent.viewDisconnectedUsernames());
+	}
+	
+	public static void voirMessages(String dest) {
+		if (dest != null) panel4.updateMessages(agent.getMessageHistory(dest));
+	}		
+	
+	
+/*-----------------------Méthodes - Main = Lancement de l'Interface-------------------------*/
+	
+	
 	public static void main(String[] args) throws IOException, InterruptedException, HeadlessException, AWTException {
 		me = new User("");
 		agent = new Agent(me);
-		
-		//popUp("<html>L'utilisateur <i>"+"Test1"+"</i> a changé de pseudo : <i>"+"Test2"+"</i></html>");
-		
-		/*window1=new Window_1();
-		window2=new Window_2();
-		window3=new Window_3();
-		window4=new Window_4();
-		window1.setVisible(true);
-		window2.setVisible(false);
-		window3.setVisible(false);
-		window4.setVisible(false);*/
 		
 		panel1=new Panel1();
 		panel2=new Panel2();

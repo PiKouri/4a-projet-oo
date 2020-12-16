@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import datatypes.*;
+import userInterface.Interface;
 import userInterface.User;
 
 public class MessageManager {
@@ -42,7 +43,7 @@ public class MessageManager {
 		User user = this.agent.getNetworkManager().socketResolve(us);
 		message.setSender(user);
 		this.getMessages(user).add(message);
-		
+		Interface.notifyNewMessage(message);
 	}
 	
 	/**

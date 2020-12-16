@@ -121,15 +121,17 @@ public class UDPServer extends Thread {
 			switch (action) {
 
 			case "connect" :
-				this.agent.getNetworkManager().tellCanAccess(address);
-				this.agent.getUserStatusManager().userConnect(username, address);
-				try {
-					Socket sock = new Socket(address, Agent.defaultPortNumber);
-					this.agent.getNetworkManager().newActiveUserSocket(sock);
-				} catch (IOException e1) {
-					System.out.printf("Could not create socket when trying to connect ERROR\n");
+				if (!this.agent.isFirstConnection) {
+					this.agent.getNetworkManager().tellCanAccess(address);
+					this.agent.getUserStatusManager().userConnect(username, address);
+					try {
+						Socket sock = new Socket(address, Agent.defaultPortNumber);
+						this.agent.getNetworkManager().newActiveUserSocket(sock);
+					} catch (IOException e1) {
+						System.out.printf("Could not create socket when trying to connect ERROR\n");
+					}
+					this.agent.getNetworkManager().tellDisconnectedUsers(address);
 				}
-				this.agent.getNetworkManager().tellDisconnectedUsers(address);
 				break;
 			case "disconnect" :
 				this.agent.getUserStatusManager().userDisconnect(username, address);

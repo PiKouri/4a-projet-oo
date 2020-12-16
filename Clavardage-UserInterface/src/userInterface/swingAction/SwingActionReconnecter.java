@@ -1,10 +1,10 @@
-package swingAction;
+package userInterface.swingAction;
 
 import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 import userInterface.Interface;
-import userInterface.MyPanel;
+import userInterface.GraphicalElements.MyPanel;
 
 public class SwingActionReconnecter extends AbstractAction {
 	private static final long serialVersionUID = 1L;
@@ -19,8 +19,8 @@ public class SwingActionReconnecter extends AbstractAction {
 	
 	public SwingActionReconnecter(MyPanel panel) {
 		this.panel=panel;
-		putValue(NAME, "Reconnecter...");
-		putValue(SHORT_DESCRIPTION, "Some short description");
+		putValue(NAME, "Reconnecter");
+		putValue(SHORT_DESCRIPTION, "Me reconnecter");
 	}
 	public void actionPerformed(ActionEvent e) {
 		(new RunReconnecter(panel)).start();
