@@ -21,6 +21,7 @@ public class Panel1 extends MyPanel{
 	private JLabel oldUsername;
 	private JLabel label;
 	private JTextField tf;
+	private boolean isChecking=false;
 
 	
 /*-----------------------Classes - Thread pour la vérification du pseudo-------------------------*/
@@ -30,7 +31,11 @@ public class Panel1 extends MyPanel{
 		private String name;
 		public RunChooseUsername(String name){this.name=name;}
 	    public void run(){
-	    	Interface.agent.chooseUsername(name);
+	    	if (!isChecking) {
+	    		isChecking=true;
+	    		Interface.agent.chooseUsername(name);
+	    		isChecking=false;
+	    	}
 	    }
 	}
 	
@@ -40,16 +45,6 @@ public class Panel1 extends MyPanel{
 	
 	@Override
 	public void update() {}
-
-	/**
-	 * This method displays a error message when name is already taken
-	 * 
-	 * @param name Name that we wanted but which is already taken
-	 * */
-	public void errorMessage(String name) {
-		tf.setText("");
-		Interface.popUp("<html> Le pseudo <i>"+name+"</i> est déjà  utilisé  <br> Veuillez en choisir un autre SVP </html>");
-	}
 	
 	/**
 	 * This method displays the old username of the user
@@ -77,7 +72,10 @@ public class Panel1 extends MyPanel{
 	private void readName() {
 		emptyInfo();
 		String name=tf.getText();
-		if (!name.equals("")) {
+		if (name.contains(" ")) {
+			tf.setText("");
+			Interface.notifyUsernameContainsSpaces();
+		} else if (!name.equals("")) {
 			label.setText("Pseudo en cours de vérification");
 			(new RunChooseUsername(name)).start();
 		}

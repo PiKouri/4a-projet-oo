@@ -20,7 +20,7 @@ public class Panel3 extends MyPanel{
 	private JPanel users;
 	private RunUpdate autoUpdate;
 	private MyPanel thisPanel;
-
+	private Boolean isUpdating = false;
 	
 /*-----------------------Classes - Thread pour la mise à jour des utilisateurs-------------------------*/
 	
@@ -28,8 +28,12 @@ public class Panel3 extends MyPanel{
 	private class RunUpdate extends Thread {
 		public RunUpdate(){}
 	    public void run(){
-	    	System.out.println("Update List Users");
-	    	Interface.voirUtilisateurs();
+	    	if (!isUpdating) {
+	    		isUpdating=true;
+		    	System.out.println("Update List Users");
+		    	Interface.voirUtilisateurs();
+		    	isUpdating=false;
+	    	}
 	    }
 	}
 	

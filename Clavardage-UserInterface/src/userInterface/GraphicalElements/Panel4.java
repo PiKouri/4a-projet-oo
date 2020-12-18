@@ -5,6 +5,8 @@ import java.awt.Color;
 import java.awt.MouseInfo;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
@@ -37,17 +39,20 @@ private static final long serialVersionUID = 1L;
 	public static final Color destTextColor = Color.white;
 	public static final Color myTextBackgroundColor = Color.blue;
 	public static final Color destTextBackgroundColor = Color.gray;
-	public static final float myTextAlignment = LEFT_ALIGNMENT;
-	public static final float destTextAlignment = RIGHT_ALIGNMENT;
+	public static final int myTextAlignment = JLabel.RIGHT;
+	public static final int destTextAlignment = JLabel.LEFT;
 	
+	private Boolean isUpdating = false;
 	public String destination;
 	private String filename="";
 	private JLabel conversationTitle;
+	private JScrollPane scrollPane;
 	private JPanel messages;
 	private JPanel temp;
 	private JFrame imageFrame;
 	private JTextField tf;
 	public Boolean destDisconnected=false;
+	private int widthForMessages;
 	
 	private RunUpdate autoUpdate;
 
@@ -59,8 +64,12 @@ private static final long serialVersionUID = 1L;
 		private String dest;
 		public RunUpdate(String dest){this.dest=dest;}
 		public void run(){
-	    	System.out.println("Update Voir Messages");
-	    	Interface.voirMessages(dest);
+			if (!isUpdating) {
+				isUpdating=true;
+		    	System.out.println("Update Voir Messages");
+		    	Interface.voirMessages(dest);
+		    	isUpdating=false;
+			}
 	    }
 	}
 	
@@ -84,8 +93,9 @@ private static final long serialVersionUID = 1L;
 	
 	public String construireMessageString(Message msg) {
 		String date = msg.getDate();
-		String thisMsgString="<html>"+date+" - <i>"+msg.getSender().getUsername()+"</i> : ";
-		if (msg.isText()) thisMsgString += ((Text)msg).getText() + "</html>";
+		// Line wrap
+		String thisMsgString="<html><p style='width: "+widthForMessages+";'>"+date+" - <i>"+msg.getSender().getUsername()+"</i> : ";
+		if (msg.isText()) thisMsgString += ((Text)msg).getText() + "</p></html>";
 		else if (msg.isFile()) 
 			thisMsgString += "<u>(Fichier)"+((MyFile)msg).getFilename() + "</u></html>";
 		else if (msg.isImage())
@@ -132,6 +142,8 @@ private static final long serialVersionUID = 1L;
 			changerPseudo.setVisible(true);
 			deconnecter.setVisible(true);
 		}
+		if (!(scrollPane.getWidth()<50))
+			widthForMessages = scrollPane.getWidth()-50;
 		this.autoUpdate=new RunUpdate(destination);
 		autoUpdate.start();
 	}
@@ -142,23 +154,26 @@ private static final long serialVersionUID = 1L;
 	
 	private void ajoutMessage(Message msg) {
 		String thisMsgString=construireMessageString(msg);
-		JLabel thisMsg;
-		if (msg.isText()) {
-			thisMsg=new JLabel(thisMsgString);
-			thisMsg.setOpaque(true);
-			if (msg.getSender().equals(Interface.me)) {
-				thisMsg.setForeground(myTextColor);
-				thisMsg.setBackground(myTextBackgroundColor);
-				thisMsg.setAlignmentX(myTextAlignment);
-			} else {
-				thisMsg.setForeground(destTextColor);
-				thisMsg.setBackground(destTextBackgroundColor);
-				thisMsg.setAlignmentX(destTextAlignment);
-			}
-			messages.add(thisMsg);
-		}else if (msg.isImage()) {
-			thisMsg=new JLabel(thisMsgString);
-			thisMsg.setOpaque(true);
+		JLabel thisMsg=new JLabel(thisMsgString);
+		if (msg.getSender().equals(Interface.me)) {
+	    	//thisMsg.setHorizontalAlignment(myTextAlignment);
+			thisMsg.setForeground(myTextColor);
+			thisMsg.setBackground(myTextBackgroundColor);
+		} else {
+	    	//thisMsg.setHorizontalAlignment(destTextAlignment);
+			thisMsg.setForeground(destTextColor);
+			thisMsg.setBackground(destTextBackgroundColor);
+		}
+		thisMsg.setHorizontalAlignment(JLabel.LEFT);
+		thisMsg.setAlignmentX(LEFT_ALIGNMENT);
+    	//thisMsg.setPreferredSize(new java.awt.Dimension(10, 1000)); // Pour line wrap mais ne marche pas avec le scroll pane
+		thisMsg.setOpaque(true);
+		thisMsg.setBorder(new EmptyBorder(5, 5, 5, 5));
+		
+		messages.add(thisMsg);
+		
+		if (msg.isText()); // Text
+		else if (msg.isImage()) { // Image
 			JLabel img = new JLabel(((Image)msg).getImage());
 			/*img.addMouseListener(new MouseAdapter() {
 	            @Override
@@ -180,36 +195,12 @@ private static final long serialVersionUID = 1L;
 	            	imageFrame.setVisible(false);
 	            }
 			});
-			if (msg.getSender().equals(Interface.me)) {
-				thisMsg.setForeground(myTextColor);
-				thisMsg.setBackground(myTextBackgroundColor);
-				thisMsg.setAlignmentX(myTextAlignment);
-				img.setAlignmentX(CENTER_ALIGNMENT);
-			} else {
-				thisMsg.setForeground(destTextColor);
-				thisMsg.setBackground(destTextBackgroundColor);
-				thisMsg.setAlignmentX(destTextAlignment);
-				img.setAlignmentX(CENTER_ALIGNMENT);
-			}
-			messages.add(thisMsg);
-			//messages.add(img);
-		}else if (msg.isFile()) {
-			thisMsg=new JLabel(thisMsgString);
-			thisMsg.setOpaque(true);
+			img.setAlignmentX(CENTER_ALIGNMENT);
+		}else if (msg.isFile()) { // File
 			thisMsg.addMouseListener(new MouseAdapter() {
 	            @Override
 	            public void mouseClicked(MouseEvent e) {enregisterFichier(msg);}
 			});
-			if (msg.getSender().equals(Interface.me)) {
-				thisMsg.setForeground(myTextColor);
-				thisMsg.setBackground(myTextBackgroundColor);
-				thisMsg.setAlignmentX(myTextAlignment);
-			} else {
-				thisMsg.setForeground(destTextColor);
-				thisMsg.setBackground(destTextBackgroundColor);
-				thisMsg.setAlignmentX(destTextAlignment);
-			}
-			messages.add(thisMsg);
 		}
 		messages.revalidate();
     	messages.repaint();
@@ -284,6 +275,16 @@ private static final long serialVersionUID = 1L;
 		nouveauMessage(msg);
 	}
 	
+	// Auto Update when window resized
+	private class PanelListen implements ComponentListener{
+        public void componentHidden(ComponentEvent arg0) {}
+        public void componentMoved(ComponentEvent arg0) {}
+        public void componentResized(ComponentEvent arg0) {
+        	update();
+        }
+        public void componentShown(ComponentEvent arg0) {}
+    }
+	
 	
 /*-----------------------Constructeur-------------------------*/
 	
@@ -294,6 +295,7 @@ private static final long serialVersionUID = 1L;
 	public Panel4() {
 		super();
 		// Nom de la fenetre
+		this.addComponentListener(new PanelListen());
 		this.setName("ChatSystem_Clavardage - Connecté");		
 		this.setBorder(new EmptyBorder(5, 5, 5, 5));
 		this.setLayout(new BorderLayout(0, 0));
@@ -341,10 +343,13 @@ private static final long serialVersionUID = 1L;
         this.conversationTitle=new JLabel();
         this.conversationTitle.setAlignmentX(CENTER_ALIGNMENT);
         this.messages=new JPanel();
-        JScrollPane scrollPane=new JScrollPane(messages);
+        this.scrollPane=new JScrollPane(messages);
 		scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        scrollPane.setViewportView(messages);
+        scrollPane.setAutoscrolls(true);
         messages.setLayout(new BoxLayout(messages,BoxLayout.Y_AXIS));
+		
         temp.setLayout(new BoxLayout(temp,BoxLayout.Y_AXIS));
         temp.add(BorderLayout.NORTH, conversationTitle);
         temp.add(BorderLayout.SOUTH, scrollPane);
@@ -358,8 +363,8 @@ private static final long serialVersionUID = 1L;
         this.imageFrame = new JFrame("Aperçu de l'image");
         imageFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
         imageFrame.setContentPane(new JPanel());
-        
-        this.autoUpdate=null;
+        widthForMessages=scrollPane.getWidth();
+        this.autoUpdate=null;        
         
 	}
 

@@ -70,8 +70,14 @@ public class Interface {
 /*-----------------------Méthodes - Notifications depuis l'Agent-------------------------*/
 	
 	
+	public static void notifyUsernameContainsSpaces() {
+		panel1.emptyInfo();
+		Interface.popUp("<html> <b>Votre pseudo contient un/des espace(s)</b> </html>");
+	}
+	
 	public static void notifyUsernameNotAvailable(String name) {
-		panel1.errorMessage(name);
+		panel1.emptyInfo();
+		Interface.popUp("<html> Le pseudo <i>"+name+"</i> est déjà  utilisé  <br> Veuillez en choisir un autre SVP </html>");
 	}
 	
 	public static void notifyUsernameAvailable() {
@@ -139,8 +145,8 @@ public class Interface {
 	}
 	
 	public static void ouvrirVoirUtilisateurs(MyPanel from) {
-		panel3.update();
 		switchPanel(from, panel3);
+		panel3.update();
 	}
 	
 	public static void deconnecter(MyPanel from) {
@@ -166,15 +172,15 @@ public class Interface {
 	
 	
 	public static void accueil(MyPanel from) {
-		panel2.update();
 		switchPanel(from, panel2);
+		panel2.update();
 	}
 	
 	public static void ouvrirConversation(MyPanel from, String username, boolean isActive) {
 		panel4.setDestination(username);
 		panel4.destDisconnected=!isActive;
-		panel4.update();
 		switchPanel(from, panel4);
+		panel4.update();
 	}
 	
 	public static void envoyerMessage(String dest, Message message) {
@@ -190,11 +196,18 @@ public class Interface {
 	
 	
 	public static void voirUtilisateurs() {
+		/*java.util.ArrayList<String> test = new java.util.ArrayList<String>();
+		test.add("test");
+		panel3.updateActiveUsers(test);*/
 		panel3.updateActiveUsers(agent.viewActiveUsernames());
 		panel3.updateDisconnectedUsers(agent.viewDisconnectedUsernames());
 	}
 	
 	public static void voirMessages(String dest) {
+		/*java.util.ArrayList<Message> test = new java.util.ArrayList<Message>();
+		test.add(new datatypes.Text(new User("test"),"Messagesoifoisjdfo jsdof jsdoifj sdofij osidfj"));
+		test.add(new datatypes.Text(new User("test"),"coucou2"));
+		panel4.updateMessages(test);*/
 		if (dest != null) panel4.updateMessages(agent.getMessageHistory(dest));
 	}		
 	

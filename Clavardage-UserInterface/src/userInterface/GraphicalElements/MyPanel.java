@@ -1,6 +1,9 @@
 package userInterface.GraphicalElements;
 
+import java.awt.Dimension;
+
 import javax.swing.Action;
+import javax.swing.JButton;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -38,8 +41,7 @@ public abstract class MyPanel extends JPanel{
 		JMenuBar mb = new JMenuBar();
         JMenu m1 = new JMenu("MyChat");
         JMenu m2 = new JMenu("Utilisateurs");
-        JMenuItem m3 = new JMenuItem("Aide");
-        m3.setMaximumSize( m3.getPreferredSize() );
+        JButton m3 = new JButton("Aide");
         m3.setAction(actionInfos);
         mb.add(m1);
         mb.add(m2);
