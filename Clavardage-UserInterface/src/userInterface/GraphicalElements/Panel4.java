@@ -2,6 +2,7 @@ package userInterface.GraphicalElements;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.MouseInfo;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -66,6 +67,8 @@ private static final long serialVersionUID = 1L;
 		public void run(){
 			if (!isUpdating) {
 				isUpdating=true;
+				try {Thread.sleep(200);} catch (Exception e) {} // Attente pour affichage
+				widthForMessages = scrollPane.getWidth()-50;
 		    	System.out.println("Update Voir Messages");
 		    	Interface.voirMessages(dest);
 		    	isUpdating=false;
@@ -80,6 +83,8 @@ private static final long serialVersionUID = 1L;
 			this.msg=msg;this.panel=panel;
 		}
 		public void run(){
+			try {Thread.sleep(200);} catch (Exception e) {} // Attente pour affichage
+	        widthForMessages = scrollPane.getWidth()-50;
 	    	System.out.println("Update Ajout Message");
 	    	panel.ajoutMessage(msg);
 	    	panel.revalidate();
@@ -239,7 +244,16 @@ private static final long serialVersionUID = 1L;
 		if (userSelection == JFileChooser.APPROVE_OPTION) {
 		    File fileToSave = fileChooser.getSelectedFile();
 		    try {
-		    	BufferedImage bi = (BufferedImage) (((Image)msg).getImage().getImage());
+		    	//BufferedImage bi = (BufferedImage) (((Image)msg).getImage().getImage());
+		    	// Create a buffered image with transparency
+		    	java.awt.Image img = (((Image)msg).getImage().getImage());
+		        BufferedImage bi = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+
+		        // Draw the image on to the buffered image
+		        Graphics2D bGr = bi.createGraphics();
+		        bGr.drawImage(img, 0, 0, null);
+		        bGr.dispose();
+		        
 		    	String filename = ((Image)msg).getFilename();
 		        File thisImage = new File(filename);
 		        ImageIO.write(bi, "png", thisImage);
@@ -363,7 +377,7 @@ private static final long serialVersionUID = 1L;
         this.imageFrame = new JFrame("Aperçu de l'image");
         imageFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
         imageFrame.setContentPane(new JPanel());
-        widthForMessages=scrollPane.getWidth();
+        widthForMessages = 0;
         this.autoUpdate=null;        
         
 	}

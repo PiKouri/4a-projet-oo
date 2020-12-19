@@ -30,6 +30,7 @@ public class Panel3 extends MyPanel{
 	    public void run(){
 	    	if (!isUpdating) {
 	    		isUpdating=true;
+	    		try {Thread.sleep(200);} catch (Exception e) {} // Attente pour affichage
 		    	System.out.println("Update List Users");
 		    	Interface.voirUtilisateurs();
 		    	isUpdating=false;

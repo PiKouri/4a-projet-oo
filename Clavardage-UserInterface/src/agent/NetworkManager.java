@@ -100,7 +100,7 @@ public class NetworkManager {
 		} else { 
 			// A la première connexion : premier arrivé / premier servi
 			// Si quelqu'un veut le même nom, on lui dit qu'il n'est pas disponible
-			if (username.equals(this.agent.me.getUsername())) this.udpClient.sendBroadcast("tellUsernameAvailability "+username+" "+ false);
+			if (username.equals(this.agent.tempName)) this.udpClient.sendBroadcast("tellUsernameAvailability "+username+" "+ false);
 		}
 			
 	}

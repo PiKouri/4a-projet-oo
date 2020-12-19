@@ -33,6 +33,7 @@ public class Panel1 extends MyPanel{
 	    public void run(){
 	    	if (!isChecking) {
 	    		isChecking=true;
+	    		//Interface.me.changeUsername(name);
 	    		Interface.agent.chooseUsername(name);
 	    		isChecking=false;
 	    	}

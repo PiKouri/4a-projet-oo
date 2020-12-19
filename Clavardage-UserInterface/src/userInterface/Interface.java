@@ -107,7 +107,6 @@ public class Interface {
 	}
 	
 	public static void notifyUserReconnected(String name) {
-		System.out.printf("%s reconnected - destination was %s\n", name, panel4.destination);
 		if (mainWindow.getContentPane().equals(panel4) && panel4.destination.equals(name)) {
 			panel4.destDisconnected=false;
 			panel4.update();

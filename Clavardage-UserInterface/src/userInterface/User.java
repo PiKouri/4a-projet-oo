@@ -32,4 +32,8 @@ public class User implements Serializable {
 	public String toString() {
 		return this.getUsername();
 	}
+	
+	public int compareTo(User u) {
+		return this.getUsername().compareTo(u.getUsername());
+	}
 }

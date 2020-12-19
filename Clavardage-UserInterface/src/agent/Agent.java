@@ -2,6 +2,7 @@ package agent;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 
 import datatypes.*;
 import userInterface.Interface;
@@ -24,6 +25,8 @@ public class Agent{
 	
 	/**User of this Agent*/
 	protected User me;
+	/**For the first connection*/
+	protected String tempName; 
 	/**True when first connection (or after reconnection)*/
 	protected boolean isFirstConnection;
 	/**True when reconnection (or after reconnection)*/
@@ -52,7 +55,7 @@ public class Agent{
 	public Agent(User me) throws IOException {
 		this.me = me;
 		this.isFirstConnection=true;
-		this.isReconnection=true;
+		this.isReconnection=false;
 		this.isDisconnected = false;
 		
 		this.usernameManager = new UsernameManager(this);
@@ -60,6 +63,18 @@ public class Agent{
 		this.messageManager = new MessageManager(this);
 		this.userStatusManager = new UserStatusManager(this);
 		
+	}
+	
+
+/*-----------------------Classes - Comparateur pour trier les listes dans l'ordre alphabétique-------------------------*/
+
+
+	private class NameSorter implements Comparator<User> 
+	{
+		@Override
+		public int compare(User u1, User u2) {
+			return u1.getUsername().compareToIgnoreCase(u2.getUsername());
+		}
 	}
 	
 	
@@ -75,6 +90,7 @@ public class Agent{
      * @param name Username that the user wants to use
      */
 	public void chooseUsername(String name) {
+		this.tempName=name;
 		boolean ok=false;
 		if ((!this.isFirstConnection ||this.isReconnection) && name.equals(this.me.getUsername())) ok = true;
 		else ok = this.usernameManager.checkUsernameAvailability(name);
@@ -105,9 +121,11 @@ public class Agent{
      */
 	public ArrayList<String> viewActiveUsernames(){
 		ArrayList<String> list = new ArrayList<String>();
+		this.userStatusManager.getActiveUsers().sort(new NameSorter());
 		for (User user : this.userStatusManager.getActiveUsers()) {
 			list.add(this.usernameManager.getUsername((user)));
 		}
+		//list.sort;
 		return list;
 	}
 	
@@ -118,6 +136,7 @@ public class Agent{
      */
 	public ArrayList<String> viewDisconnectedUsernames(){
 		ArrayList<String> list = new ArrayList<String>();
+		this.userStatusManager.getDisconnectedUsers().sort(new NameSorter());
 		for (User user : this.userStatusManager.getDisconnectedUsers()) {
 			list.add(this.usernameManager.getUsername((user)));
 		}

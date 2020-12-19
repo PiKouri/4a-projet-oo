@@ -3,6 +3,7 @@ package agent;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Comparator;
 
 import userInterface.Interface;
 import userInterface.User;
@@ -11,31 +12,31 @@ public class UserStatusManager {
 
 	/**The agent that created this UserStatusManager*/
 	private Agent agent;
-	
+
 	/**List of the active users*/
 	private ArrayList<User> activeUsers;
 	/**List of the disconnected users*/
 	private ArrayList<User> disconnectedUsers;
-	
-	
-/*-----------------------Constructeurs-------------------------*/
-	
-	
+
+
+	/*-----------------------Constructeurs-------------------------*/
+
+
 	/**
-     * Constructor for the class UserStatusManager
-     * 
-     * @param agent The agent that created this UserStatusManager
-     */
+	 * Constructor for the class UserStatusManager
+	 * 
+	 * @param agent The agent that created this UserStatusManager
+	 */
 	protected UserStatusManager(Agent agent) {
 		this.agent=agent;
 		this.activeUsers = new ArrayList<User>();
 		this.disconnectedUsers = new ArrayList<User>();
 	}
-	
-	
-/*-----------------------Méthodes - Actualisation de l'état des autres utilisateurs-------------------------*/
-	
-	
+
+
+	/*-----------------------Méthodes - Actualisation de l'état des autres utilisateurs-------------------------*/
+
+
 	/**
 	 * This methods updates the disconnected users' list when receiving "updateDisconnectedUsers" messages
 	 * 
@@ -52,13 +53,13 @@ public class UserStatusManager {
 			this.agent.getNetworkManager().addAddress(user, address);
 		}
 	}
-	
+
 	/**
-     * This method sets the status of a user to disconnected when receiving a "disconnect" message
-     *  
-     * @param username Username of the user who disconnected
-     * @param address Address of the user who disconnected
-     */
+	 * This method sets the status of a user to disconnected when receiving a "disconnect" message
+	 *  
+	 * @param username Username of the user who disconnected
+	 * @param address Address of the user who disconnected
+	 */
 	protected void userDisconnect(String username, InetAddress address) throws IOException { 
 		if (!this.agent.isFirstConnection) {
 			User user = this.agent.getUsernameManager().nameResolve(username);
@@ -69,13 +70,13 @@ public class UserStatusManager {
 			Interface.notifyUserDisconnected(username);
 		}
 	}
-	
+
 	/**
-     * This method sets the status of a user to active when receiving a "connect" message
-     *  
-     * @param username Username of the user who connected
-     * @param address Address of the user who connected
-     */
+	 * This method sets the status of a user to active when receiving a "connect" message
+	 *  
+	 * @param username Username of the user who connected
+	 * @param address Address of the user who connected
+	 */
 	protected void userConnect(String username, InetAddress address) { 
 		if (!this.agent.isFirstConnection) {
 			User oldUser = this.agent.getNetworkManager().addressResolve(address);
@@ -89,7 +90,7 @@ public class UserStatusManager {
 				this.agent.getMessageManager().initMessages(user);
 				synchronized(this.agent.getNetworkManager()) {this.agent.getNetworkManager().notifyAll();}
 			} else {
-				 {
+				{
 					if (!(oldUser.getUsername().equals(username))) {
 						if (Agent.debug) System.out.printf("Old user reconnected : %s -> %s\n",oldUser.getUsername(), username);
 						Interface.notifyUsernameChanged(oldUser.getUsername(), username);
@@ -106,15 +107,15 @@ public class UserStatusManager {
 			} 
 		}
 	}
-	
+
 	/**
-     * This method verifies that no user from the list has the requested address
-     *  
-     * @param list List of the users
-     * @param address Address that we want to check
-     * 
-     * @return True if no user from the list has the requested address
-     */
+	 * This method verifies that no user from the list has the requested address
+	 *  
+	 * @param list List of the users
+	 * @param address Address that we want to check
+	 * 
+	 * @return True if no user from the list has the requested address
+	 */
 	private boolean verifyUniqAddress(ArrayList<User> list, InetAddress address) {
 		boolean ok = true;
 		for (User temp : list) {
@@ -123,33 +124,33 @@ public class UserStatusManager {
 		}
 		return ok;
 	}
-	
-	
-/*-----------------------Méthodes - Getteurs et setteurs-------------------------*/
-	
-	
+
+
+	/*-----------------------Méthodes - Getteurs et setteurs-------------------------*/
+
+
 	/**
-     * This method returns the list of disconnected users
-     * 
-     * @return List of all disconnected users
-     */
+	 * This method returns the list of disconnected users
+	 * 
+	 * @return List of all disconnected users
+	 */
 	protected ArrayList<User> getDisconnectedUsers() {
 		return disconnectedUsers;
 	}
-	
+
 	/**
-     * This method returns the list of active users
-     * 
-     * @return List of all active users
-     */
+	 * This method returns the list of active users
+	 * 
+	 * @return List of all active users
+	 */
 	protected ArrayList<User> getActiveUsers() {
 		return activeUsers;
 	}
-	
+
 	/**
-     * This method puts all active users as disconnected
-     * <p>Note that this method is used when disconnecting
-     */
+	 * This method puts all active users as disconnected
+	 * <p>Note that this method is used when disconnecting
+	 */
 	protected void putAllUsersDisconnected() {
 		for (User u : this.activeUsers) this.disconnectedUsers.add(u);
 		this.activeUsers=new ArrayList<User>();
