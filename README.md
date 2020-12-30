@@ -17,6 +17,8 @@
     2. [Diagramme de structure composite](#newComposite)
     3. [Diagramme de machines à états](#newState)
 ## Presentation <a name="presentation"></a>
+Partie POO : 
+  On peut exporter le projet vers un fichier Runnable Jar en utilisant la classe Interface pour la configuration de lancement
 Partie COO : Diagrammes à refaire
 - [x] Diagramme des cas d'utilisation
 - [X] Diagrammes de séquence
