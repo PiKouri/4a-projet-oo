@@ -1,6 +1,6 @@
 # 4IR Projet COO/POO
 ## 4IR-GRP A1
-## Trinôme : 
+## Trinôme
   * BENAZZOUZ Abir
   * BONNEAU Clémentine
   * HOK Jean-Rémy  
