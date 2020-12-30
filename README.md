@@ -5,15 +5,15 @@
   * BONNEAU Clémentine
   * HOK Jean-Rémy  
 ## Sommaire
-I. [Présentation](#presentation)
-II. [Anciens diagrammes](#oldDiagrams)
-    1. [Diagramme des cas d'utilisation](#oldUseCase)
-    2. [Diagrammes de séquence](#oldSequence)
-    3. [Diagramme de classe](#oldClass)
-III. [Nouveaux diagrammes](#newDiagrams)
-    1. [Diagramme de classe](#newClass)
-        a. [Résumé](#newClassSummary)
-        b. [Détails](#newClassDetails)
+*I. [Présentation](#presentation)
+*II. [Anciens diagrammes](#oldDiagrams)
+    *1. [Diagramme des cas d'utilisation](#oldUseCase)
+    *2. [Diagrammes de séquence](#oldSequence)
+    *3. [Diagramme de classe](#oldClass)
+*III. [Nouveaux diagrammes](#newDiagrams)
+    *1. [Diagramme de classe](#newClass)
+        *a. [Résumé](#newClassSummary)
+        *b. [Détails](#newClassDetails)
 ## Presentation <a name="presentation"></a>
 Partie COO : Diagrammes à refaire
 ## Anciens Diagrammes <a name="oldDiagrams"></a>
