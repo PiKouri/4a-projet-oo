@@ -4,13 +4,22 @@
   * BENAZZOUZ Abir
   * BONNEAU Clémentine
   * HOK Jean-Rémy  
-  
-## Presentation
+## Sommaire
+I. [Présentation](#presentation)
+II. [Anciens diagrammes](#oldDiagrams)
+    1. [Diagramme des cas d'utilisation](#oldUseCase)
+    2. [Diagrammes de séquence](#oldSequence)
+    3. [Diagramme de classe](#oldClass)
+III. [Nouveaux diagrammes](#newDiagrams)
+    1. [Diagramme de classe](#newClass)
+        a. [Résumé](#newClassSummary)
+        b. [Détails](#newClassDetails)
+## Presentation <a name="presentation"></a>
 Partie COO : Diagrammes à refaire
-## Anciens Diagrammes
-### Diagramme des cas d'utilisation
+## Anciens Diagrammes <a name="oldDiagrams"></a>
+### Diagramme des cas d'utilisation <a name="oldUseCase"></a>
 ![Ancien Diagramme des cas d'utilisation](https://github.com/PiKouri/4a-projet-oo/blob/main/img/UseCase%20Diagram.png)
-### Diagrammes de séquence
+### Diagrammes de séquence <a name="oldSequence"></a>
   * chooseUsername() 
   ![Ancien Diagramme de séquence chooseUsername()](https://github.com/PiKouri/4a-projet-oo/blob/main/img/chooseUsername.png)
   * getMessageHistory()
@@ -21,13 +30,13 @@ Partie COO : Diagrammes à refaire
   ![Ancien Diagramme de séquence sendMessage()](https://github.com/PiKouri/4a-projet-oo/blob/main/img/sendMessage.png)
   * viewActiveUsernames()
   ![Ancien Diagramme de séquence viewActiveUsernames()](https://github.com/PiKouri/4a-projet-oo/blob/main/img/viewActiveUsernames.png)
-### Diagrammes de classe
+### Diagrammes de classe <a name="oldClass"></a>
 ![Ancien Diagramme de classe](https://github.com/PiKouri/4a-projet-oo/blob/main/img/ClassDiagram%20v2.png)
-## Nouveaux Diagrammes
-### Diagrammes de classe
-#### Résumé
+## Nouveaux Diagrammes <a name="newDiagrams"></a>
+### Diagrammes de classe <a name="newClass"></a>
+#### Résumé <a name="newClassSummary"></a>
 ![Résumé Diagramme de Classe](https://github.com/PiKouri/4a-projet-oo/blob/main/img/Nouveaux%20Diagrammes/Class/Résumé%20Diagramme%20de%20Classe.png)
-#### Détails
+#### Détails <a name="newClassDetails"></a>
   * Package agent
 ![agent Diagramme de Classe](https://github.com/PiKouri/4a-projet-oo/blob/main/img/Nouveaux%20Diagrammes/Class/agent%20Class%20Diagram.png)
   * Package userInterface
