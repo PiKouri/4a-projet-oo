@@ -18,6 +18,11 @@
     3. [Diagramme de machines à états](#newState)
 ## Presentation <a name="presentation"></a>
 Partie COO : Diagrammes à refaire
+- [x] Diagramme des cas d'utilisation
+- [X] Diagrammes de séquence
+- [X] Diagramme de classe
+- [] Diagramme de structure composite]
+- [] Diagramme de machines à états
 ## Anciens Diagrammes <a name="oldDiagrams"></a>
 ### Diagramme des cas d'utilisation <a name="oldUseCase"></a>
 ![Ancien Diagramme des cas d'utilisation](https://github.com/PiKouri/4a-projet-oo/blob/main/img/UseCase%20Diagram.png)
