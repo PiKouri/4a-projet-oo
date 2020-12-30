@@ -14,6 +14,8 @@
     1. [Diagramme de classe](#newClass)
         1. [Résumé](#newClassSummary)
         2. [Détails](#newClassDetails)
+    2. [Diagramme de structure composite](#newComposite)
+    3. [Diagramme de machines à états](#newState)
 ## Presentation <a name="presentation"></a>
 Partie COO : Diagrammes à refaire
 ## Anciens Diagrammes <a name="oldDiagrams"></a>
@@ -43,3 +45,5 @@ Partie COO : Diagrammes à refaire
 ![userInterface Diagramme de Classe](https://github.com/PiKouri/4a-projet-oo/blob/main/img/Nouveaux%20Diagrammes/Class/userInterface%20Class%20Diagram.png)
   * Package datatypes
 ![datatypes Diagramme de Classe](https://github.com/PiKouri/4a-projet-oo/blob/main/img/Nouveaux%20Diagrammes/Class/datatypes%20Class%20Diagram.png)
+### Diagramme de structure composite <a name="newComposite"></a>
+### Diagramme de machines à états <a name="newState"></a>
