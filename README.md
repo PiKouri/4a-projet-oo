@@ -7,7 +7,6 @@
   
 ## Presentation
 Partie COO : Diagrammes à refaire
-
 ## Anciens Diagrammes
 ### Diagramme des cas d'utilisation
 ![Ancien Diagramme des cas d'utilisation](https://github.com/PiKouri/4a-projet-oo/blob/main/img/UseCase%20Diagram.png)
