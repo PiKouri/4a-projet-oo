@@ -8,6 +8,7 @@ import java.util.Comparator;
 import datatypes.*;
 import userInterface.Interface;
 import userInterface.User;
+import userInterface.GraphicalElements.Panel4;
 
 public class Agent{
 	
@@ -113,12 +114,21 @@ public class Agent{
 			} else {
 				this.usernameManager.addUsername(this.me,name);
 				this.me.changeUsername(name);
-				if (!this.isReconnection) {
-					this.databaseManager.addUser(me);
-					this.databaseManager.getOldInformations();
+				
+				final class RunGetOldInfos extends Thread {
+					public RunGetOldInfos(){
+					}
+					public void run(){
+						//try {Thread.sleep(5000);} catch (Exception e) {} // Attente pour vérification
+				    	if (!isReconnection) {
+							databaseManager.addUser(me);
+							databaseManager.getOldInformations();
+						}
+						isFirstConnection=false;
+						networkManager.sendBroadcast("connect " + me.getUsername());
+				    }
 				}
-				this.isFirstConnection=false;
-				this.networkManager.sendBroadcast("connect " + this.me.getUsername());
+				(new RunGetOldInfos()).start();
 			}
 			Interface.notifyUsernameAvailable();
 			if (this.isReconnection)this.isReconnection=false;
@@ -180,7 +190,6 @@ public class Agent{
      * @param message Message that the user wants to send
      */
 	public void sendMessage(String dest, Message message) {
-		// TODO
 		if (Agent.debug) this.getNetworkManager().printAll();
 		User user = this.usernameManager.nameResolve(dest);
 		if (user == null) System.out.printf("Could not resolve username : %s\n", dest);
