@@ -44,7 +44,7 @@ Partie COO : Diagrammes à refaire
 ![Ancien Diagramme de classe](https://github.com/PiKouri/4a-projet-oo/blob/main/img/ClassDiagram%20v2.png)
 ## Nouveaux Diagrammes <a name="newDiagrams"></a>
 ### Diagrammes de classe <a name="newClass"></a>
-### Légende des icônes pour les diagrammes de classes suivant <a name ="objectAIDLegend"></a>
+### Légende des icônes pour les diagrammes de classes suivants <a name ="objectAIDLegend"></a>
 ![Légende ObjectAID UML](https://github.com/PiKouri/4a-projet-oo/blob/main/img/Nouveaux%20Diagrammes/Legend%20ObjectAID%20UML.png)
 #### Résumé <a name="newClassSummary"></a>
 ![Résumé Diagramme de Classe](https://github.com/PiKouri/4a-projet-oo/blob/main/img/Nouveaux%20Diagrammes/Class/Résumé%20Diagramme%20de%20Classe.png)
