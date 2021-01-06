@@ -12,8 +12,9 @@
     3. [Diagramme de classe](#oldClass)
 3. [Nouveaux diagrammes](#newDiagrams)
     1. [Diagramme de classe](#newClass)
-        1. [Résumé](#newClassSummary)
-        2. [Détails](#newClassDetails)
+        1. [Légende des icônes pour les diagrammes de classe](#objectAIDLegend)
+        2. [Résumé](#newClassSummary)
+        3. [Détails](#newClassDetails)
     2. [Diagramme de structure composite](#newComposite)
     3. [Diagramme de machines à états](#newState)
 ## Presentation <a name="presentation"></a>
@@ -43,6 +44,8 @@ Partie COO : Diagrammes à refaire
 ![Ancien Diagramme de classe](https://github.com/PiKouri/4a-projet-oo/blob/main/img/ClassDiagram%20v2.png)
 ## Nouveaux Diagrammes <a name="newDiagrams"></a>
 ### Diagrammes de classe <a name="newClass"></a>
+### Légende des icônes pour les diagrammes de classes suivants <a name ="objectAIDLegend"></a>
+![Légende ObjectAID UML](https://github.com/PiKouri/4a-projet-oo/blob/main/img/Nouveaux%20Diagrammes/Legend%20ObjectAID%20UML.png)
 #### Résumé <a name="newClassSummary"></a>
 ![Résumé Diagramme de Classe](https://github.com/PiKouri/4a-projet-oo/blob/main/img/Nouveaux%20Diagrammes/Class/Résumé%20Diagramme%20de%20Classe.png)
 #### Détails <a name="newClassDetails"></a>
