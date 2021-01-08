@@ -57,16 +57,14 @@ public class UDPClient {
     	try {
 			listBroadcastAddresses = listAllBroadcastAddresses();
 		} catch (SocketException e) {
-			System.out.printf("Could not list all broadcast addresses ERROR\n");
-			System.exit(-1);
+        	Agent.errorMessage("ERROR when trying to list all broadcast addresses\n", e);
 		}
     	if (Agent.debug) System.out.printf("Broadcast Client - Message : %s\n", message);
     	for (InetAddress address : listBroadcastAddresses) {
      		try {
 				broadcast(message, address);
 			} catch (IOException e) {
-				System.out.printf("Could not send broadcast message ERROR\n");
-				System.exit(-1);
+	        	Agent.errorMessage("ERROR when trying to send a broadcast message\n", e);
 			}
     		//System.out.printf("Broadcast Client - Address : %s\n", address.toString()); 
     	}
@@ -105,8 +103,7 @@ public class UDPClient {
 			socket.send(packet);
 			socket.close();
     	} catch (Exception e) {
-    		System.out.printf("Could not send UDP message ERROR\n");
-			System.exit(-1);
+        	Agent.errorMessage("ERROR when trying to send an UDP message", e);
     	}
   }
 }

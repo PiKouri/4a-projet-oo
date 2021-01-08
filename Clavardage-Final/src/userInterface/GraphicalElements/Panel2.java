@@ -23,9 +23,9 @@ public class Panel2 extends MyPanel {
 	@Override
 	public void update() {
 		if (Interface.isDisconnected)
-			this.setName("ChatSystem_Accueil - "+Interface.me+" - Déconnecté");
+			this.setName("ChatSystem_Accueil - "+Interface.agent.getUsername()+" - Déconnecté");
 		else 
-			this.setName("ChatSystem_Accueil - "+Interface.me+" - Connecté");
+			this.setName("ChatSystem_Accueil - "+Interface.agent.getUsername()+" - Connecté");
 		if (Interface.isDisconnected) {
 			deconnecter.setVisible(false);
 			changerPseudo.setVisible(false);
@@ -35,7 +35,7 @@ public class Panel2 extends MyPanel {
 			changerPseudo.setVisible(true);
 			deconnecter.setVisible(true);
 		}
-		label.setText("<html> Bonjour <i>"+Interface.me.getUsername()+"</i> <br> Bienvenue sur ChatSystem </html>");
+		label.setText("<html> Bonjour <i>"+Interface.agent.getUsername()+"</i> <br> Bienvenue sur ChatSystem </html>");
 	}
 
 	
@@ -59,7 +59,7 @@ public class Panel2 extends MyPanel {
 		FlowLayout flowLayout = (FlowLayout) panel1.getLayout();
 		flowLayout.setVgap(100);
 		//texte du centre
-		JLabel label = new JLabel("<html> Bonjour "+Interface.me.getUsername()+" <br> Bienvenue sur ChatSystem </html>");
+		JLabel label = new JLabel("<html> Bonjour "+""+" <br> Bienvenue sur ChatSystem </html>");
 		this.label=label;
 		panel1.add(label);
 		this.add(BorderLayout.CENTER, panel1);

@@ -36,7 +36,7 @@ public class TCPServer extends Thread{
 		try {
 			this.socket.close();
 		} catch (IOException e) {
-			System.out.println("Error in socket.close()");
+        	Agent.errorMessage("ERROR in socket.close()\n", e);
 		}
 	}
 	
@@ -56,7 +56,7 @@ public class TCPServer extends Thread{
 		while (true) {
 			Socket link;
 			link = this.socket.accept();
-			this.agent.getNetworkManager().newActiveUserSocket(link);
+			this.agent.getNetworkManager().newActiveUserSocket(link,0);
 		}
 	}
 

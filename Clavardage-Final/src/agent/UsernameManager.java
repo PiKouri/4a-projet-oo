@@ -1,16 +1,17 @@
 package agent;
 
-import datatypes.MyMap;
+import java.net.InetAddress;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
 import userInterface.Interface;
-import userInterface.User;
 
 public class UsernameManager {
 	
 	/**The agent that created this UsernameManager*/
 	private Agent agent;
-	
-	/**MyMap that associate a User to a Username*/
-	private MyMap<User,String> mapUsernames;
 
 	
 /*-----------------------Constructeurs-------------------------*/
@@ -23,7 +24,6 @@ public class UsernameManager {
      */
 	protected UsernameManager(Agent agent) {
 		this.agent=agent;
-		this.mapUsernames = new MyMap<User,String>();
 	}
 	
 	
@@ -63,11 +63,11 @@ public class UsernameManager {
 				ok = true;
 			}
 		} else { // Hors première connexion, on regarde dans notre table locale
-			ok = !(this.mapUsernames.containsValue(username));
+			ok = !(this.containsUsername(username));
 		}
 		return ok;
 	}
-	
+
 	/**
      * This method replaces the username of a user with a new one after receiving a "changeUsername" message
      * 
@@ -75,57 +75,74 @@ public class UsernameManager {
      * @param newUsername The new username
      */
 	protected void userChangeUsername(String oldUsername, String newUsername) {
-		if (!this.agent.isFirstConnection) {
-			if (oldUsername != newUsername) {
-				User user = nameResolve(oldUsername);
-				user.changeUsername(newUsername);
-				this.changeUsername(user, newUsername);
-				Interface.notifyUsernameChanged(oldUsername, newUsername);
+		if (!this.agent.isFirstConnection || newUsername.equals(this.agent.getUsername())) { // Not during First Connection
+			try {
+				if (!(oldUsername.equals(newUsername))) {
+					if (Agent.debug) System.out.printf("Username changed in the database : %s -> %s\n",oldUsername,newUsername);
+					// Change username in table users
+					String sql = "UPDATE users SET username = ? "
+			                + "WHERE username = ?";
+					PreparedStatement pstmt = this.agent.getDatabaseManager().getConnection().prepareStatement(sql);
+					pstmt.setString(1, newUsername);
+					pstmt.setString(2, oldUsername);
+			        pstmt.executeUpdate();
+			        if (!newUsername.equals(this.agent.getUsername())) {// If the user is not us
+						this.agent.getNetworkManager().changeSocketUsername(oldUsername,newUsername);
+				        // Change messages table's name
+				        sql = "ALTER TABLE messages_"+oldUsername+" RENAME TO messages_"+newUsername;
+				        Statement stmt = this.agent.getDatabaseManager().getConnection().createStatement();
+				        stmt.execute(sql);
+						Interface.notifyUsernameChanged(oldUsername, newUsername);
+			        }
+				}
+			} catch (SQLException e) {
+				Agent.errorMessage(
+						String.format("ERROR when trying to change username for user %s in the database\n",oldUsername), e);
 			}
-		}
+		} 
 	}
 	
-	
-/*-----------------------Méthodes - Getteurs et setteurs-------------------------*/
-	
 	/**
-     * This method returns the user associated to a specific username
+     * Get username by address from the database
      *
-     * @param username Username that we want to resolve
+     * @param address IP Address of the user
+     * @param externId Extern id of the user we add (0 if intern user)
      * 
-     * @return The user associated to the username
+     * @return User object containing the username and the address
      */
-	protected User nameResolve(String username) {
-		return this.mapUsernames.getUser(username);
-	}
-
-	/**
-     * This method returns the MyMap of users and their associated usernames
-     * 
-     * @return MyMap of users and their associated usernames
-     */
-	protected MyMap<User,String> getMapUsernames() {
-		return this.mapUsernames;
-	}
-	
-	/**
-     * This method adds an association of a user and a username
-     * 
-     * @param user
-     * @param username
-     */
-	protected void addUsername(User user, String username) {
-		this.mapUsernames.putUser(user,username);
+	protected String getUsername(InetAddress address, int externId) {
+		try {
+			PreparedStatement pstmt  = 
+					this.agent.getDatabaseManager().getConnection().prepareStatement(
+							this.agent.getDatabaseManager().selectByAddressAndExternId);
+	        pstmt.setString(1,this.agent.getNetworkManager().addressToString(address));
+	        pstmt.setInt(2, externId);
+	        ResultSet rs  = pstmt.executeQuery();
+	        return rs.getString("username");
+		} catch (SQLException e) {
+        	Agent.errorMessage(
+					String.format("ERROR when trying to get user from address %s | externId %d in the database\n",address,externId), e);
+		}
+        return null; // Pas accessible
 	}
 	
 	/**
-     * This method replaces the username of a user in the MyMap
-     * 
-     * @param user
-     * @param newUsername
+     * Return true if the database contains this username
+     *
+     * @param username Username to check
+     * @return True if the database contains this username
      */
-	protected void changeUsername(User user, String newUsername) {
-		this.mapUsernames.replaceValue(user, newUsername);
-		this.agent.getDatabaseManager().changeUsername(user.getAddress(), newUsername);
+	protected boolean containsUsername(String username) {
+		try {
+			PreparedStatement pstmt  = this.agent.getDatabaseManager().getConnection().prepareStatement(
+					this.agent.getDatabaseManager().selectByName);
+			pstmt.setString(1,username);
+	        ResultSet rs  = pstmt.executeQuery();
+	        return !(rs.isClosed());
+		} catch (SQLException e) {
+        	Agent.errorMessage(
+					String.format("ERROR when trying to check if username %s is in the database\n",username), e);
+		}
+		return true; // Pas accessible
 	}
 }

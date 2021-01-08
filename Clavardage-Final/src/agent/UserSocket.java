@@ -5,7 +5,6 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 import datatypes.*;
-import userInterface.User;
 
 public class UserSocket extends Thread {
 	
@@ -14,7 +13,7 @@ public class UserSocket extends Thread {
 	/**Socket associated to this UserSocket*/
 	private Socket socket;
 	/**User associated to this UserSocket*/
-	private User user;
+	protected String username;
 	/**Agent that created this UserSocket*/
 	private Agent agent;
 	/**True if the UserSocket is running*/
@@ -36,17 +35,16 @@ public class UserSocket extends Thread {
      * @param socket Socket associated to this UserSocket 
 	 * @throws IOException 
      */
-	public UserSocket(User user, Agent agent, Socket socket){
-		this.user=user;
-		if (Agent.debug) System.out.println("UserSocket "+ this.user.getUsername() +" created");
+	public UserSocket(String username, Agent agent, Socket socket){
+		this.username=username;
+		if (Agent.debug) System.out.println("UserSocket "+ this.username +" created");
 		this.agent=agent;
 		this.socket=socket;
 		try {
 			this.os = new ObjectOutputStream(socket.getOutputStream());
 			this.is = new ObjectInputStream(socket.getInputStream());
 		} catch (IOException e) {
-			System.out.println("Error when creating Streams (input or output)");
-			e.printStackTrace();
+        	Agent.errorMessage("ERROR when creating Streams (input or output)\n", e);
 		}
 		this.running = true;
 		this.start();
@@ -63,12 +61,12 @@ public class UserSocket extends Thread {
 	
 	@Override
 	public void interrupt(){
-		if (Agent.debug) System.out.println("UserSocket "+ this.user.getUsername() +" interrupted");
+		if (Agent.debug) System.out.println("UserSocket "+ this.username +" interrupted");
 		this.running=false;
 		try {
 			this.socket.close();
 		} catch (IOException e) {
-			System.out.println("Error when calling socket.close()");
+        	Agent.errorMessage("ERROR when calling socket.close()\n", e);
 		}
 	}
 	
@@ -102,9 +100,8 @@ public class UserSocket extends Thread {
 	public void send(Message message) {
 		try {
 			this.os.writeObject(message);
-		} catch (IOException e1) {
-			System.out.println("Error when trying to send Image message");
-			e1.printStackTrace();
+		} catch (IOException e) {
+        	Agent.errorMessage("ERROR when trying to send TCP message\n", e);
 		}
 	}
 	

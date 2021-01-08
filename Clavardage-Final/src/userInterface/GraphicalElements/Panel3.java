@@ -103,9 +103,9 @@ public class Panel3 extends MyPanel{
 	
 	public void update() {
 		if (Interface.isDisconnected)
-			this.setName("ChatSystem_Liste_users - "+Interface.me+" - Déconnecté");
+			this.setName("ChatSystem_Liste_users - "+Interface.agent.getUsername()+" - Déconnecté");
 		else 
-			this.setName("ChatSystem_Liste_users - "+Interface.me+" - Connecté");
+			this.setName("ChatSystem_Liste_users - "+Interface.agent.getUsername()+" - Connecté");
 		if (Interface.isDisconnected) {
 			deconnecter.setVisible(false);
 			changerPseudo.setVisible(false);

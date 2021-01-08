@@ -142,12 +142,12 @@ private static final long serialVersionUID = 1L;
 	public void update() {
 		tf.setText("");
 		if (Interface.isDisconnected) {
-			this.setName("ChatSystem_Clavardage - "+Interface.me+" - Déconnecté");
+			this.setName("ChatSystem_Clavardage - "+Interface.agent.getUsername()+" - Déconnecté");
 			deconnecter.setVisible(false);
 			changerPseudo.setVisible(false);
 			reconnecter.setVisible(true);
 		}else {
-			this.setName("ChatSystem_Clavardage - "+Interface.me+" - Connecté");
+			this.setName("ChatSystem_Clavardage - "+Interface.agent.getUsername()+" - Connecté");
 			reconnecter.setVisible(false);
 			changerPseudo.setVisible(true);
 			deconnecter.setVisible(true);
@@ -291,7 +291,7 @@ private static final long serialVersionUID = 1L;
 		} else {
 			Interface.popUp("Utilisateur déconnecté, envoi impossible");
 		}
-		nouveauMessage(Interface.me.getUsername(), msg);
+		nouveauMessage(Interface.agent.getUsername(), msg);
 	}
 	
 	// Auto Update when window resized

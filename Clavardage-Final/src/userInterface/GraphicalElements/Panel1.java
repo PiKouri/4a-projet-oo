@@ -54,6 +54,7 @@ public class Panel1 extends MyPanel{
 	 * @param name old username of the user
 	 * */
 	public void displayOldUsername(String name) {
+		tf.setText(name);
 		oldUsername.setText("<html>Votre ancien pseudo était : <i>"+name+"</i></html>");
 	}
 

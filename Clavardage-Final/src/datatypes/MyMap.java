@@ -3,6 +3,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * @deprecated Not used in the project => use database
+ * */
+@Deprecated
 public class MyMap <ThisUser, Value> {
 	private Map<ThisUser,Value> map1;
 	private Map<Value,ThisUser> map2;

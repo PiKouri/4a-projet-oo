@@ -51,8 +51,7 @@ public class UDPServer extends Thread {
 		try {
 			listAllOwnLocalAddresses = listAllOwnLocalAddresses();
 		} catch (SocketException e) {
-			System.out.printf("Could not list all broadcast addresses ERROR\n");
-			System.exit(-1);
+        	Agent.errorMessage("ERROR when trying to list own local addresses\n", e);
 		}
 		this.lastUsernameAvailability = false;
 		this.start();
@@ -122,13 +121,15 @@ public class UDPServer extends Thread {
 
 			case "connect" :
 				if (!this.agent.isFirstConnection) {
+					int externId = Integer.valueOf(strip[3]);
 					this.agent.getNetworkManager().tellCanAccess(address);
-					this.agent.getUserStatusManager().userConnect(username, address);
+					this.agent.getUserStatusManager().userConnect(username, address, externId);
 					try {
 						Socket sock = new Socket(address, Agent.defaultPortNumber);
-						this.agent.getNetworkManager().newActiveUserSocket(sock);
-					} catch (IOException e1) {
-						System.out.printf("Could not create socket when trying to connect ERROR\n");
+						this.agent.getNetworkManager().newActiveUserSocket(sock, externId);
+					} catch (IOException e) {
+			        	Agent.errorMessage(
+			        			"ERROR Could not create socket when trying to connect\n", e);
 					}
 					this.agent.getNetworkManager().tellDisconnectedUsers(address);
 				}
@@ -150,22 +151,25 @@ public class UDPServer extends Thread {
 				synchronized(this.agent.getUsernameManager()) {this.agent.getUsernameManager().notifyAll();}
 				break;
 			case "canAccess" : 
-				this.agent.getUserStatusManager().userConnect(username, address);
+				int externId = Integer.valueOf(strip[3]);
+				this.agent.getUserStatusManager().userConnect(username, address, externId);
 				break;
 			case "updateDisconnectedUsers" :
 				String disconnectedAddress = strip[2];
 				// Format d'adresse après .toString : \192.168.1.1
 				disconnectedAddress = disconnectedAddress.split("/")[1]; 
+				int externId2 = Integer.valueOf(strip[3]);
 				try {
 					InetAddress ipAddress = InetAddress.getByName(disconnectedAddress);
-					this.agent.getUserStatusManager().updateDisconnectedUsers(username, ipAddress);
+					this.agent.getUserStatusManager().updateDisconnectedUsers(username, ipAddress,externId2);
 				}
 				catch (UnknownHostException e) {
-					System.out.printf("Error UnknowHost : %s.\n", disconnectedAddress);
+		        	Agent.errorMessage(
+							String.format("ERROR UnknowHost : %s.\n", disconnectedAddress), e);
 				}
 				break;
 			default :
-				System.out.printf("Error reading packet \n %s \n", received);
+				System.out.printf("ERROR reading packet \n %s \n", received);
 			}
 			//System.out.printf("Local IP of this packet was: %s.\n",getOutboundAddress(packet.getSocketAddress()).getHostAddress());
 		}} catch (IOException e) {}

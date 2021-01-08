@@ -2,7 +2,6 @@ package userInterface;
 import java.awt.AWTException;
 import java.awt.HeadlessException;
 import java.io.IOException;
-import java.net.InetAddress;
 
 import javax.swing.JOptionPane;
 
@@ -22,7 +21,6 @@ public class Interface {
 	public static PropertiesReader propertiesReader = new PropertiesReader();
 	
 	public static Agent agent;
-	public static User me=new User("");
 		
 	public static MyFrame mainWindow;
 	public static Panel1 panel1;	
@@ -159,7 +157,7 @@ public class Interface {
 	
 	public static void modifierPseudo(MyPanel from) {
 		panel1.emptyInfo();
-		panel1.displayOldUsername(me.getUsername());
+		panel1.displayOldUsername(agent.getUsername());
 		switchPanel(from, panel1);
 	}
 	
@@ -171,15 +169,13 @@ public class Interface {
 	public static void deconnecter(MyPanel from) {
 		isDisconnected=true;
 		panel4.destDisconnected=true;
-		try {agent.disconnect();} catch (IOException e) {
-			System.out.println("Coucou");
-		}
+		agent.disconnect();
 		from.update();
 	}
 	
 	public static void reconnecter(MyPanel from) {
 		panel1.emptyInfo();
-		panel1.displayOldUsername(me.getUsername());
+		panel1.displayOldUsername(agent.getUsername());
 		switchPanel(from, panel1);
 		isDisconnected=false;
 		try {agent.reconnect();} catch (IOException e) {}
@@ -207,7 +203,7 @@ public class Interface {
 	}
 	
 	public static void end() {
-		try {agent.disconnect();} catch (IOException e) {}
+		agent.disconnect();
 	}
 	
 	
@@ -229,13 +225,12 @@ public class Interface {
 	
 	public static void main(String[] args) throws IOException, InterruptedException, HeadlessException, AWTException {
 		propertiesReader.getProperties();
-		me = new User("",InetAddress.getLocalHost());
 		panel1=new Panel1();
 		panel2=new Panel2();
 		panel3=new Panel3();
 		panel4=new Panel4();
 		mainWindow=new MyFrame();
-		agent = new Agent(me);
+		agent = new Agent();
 	}
 
 }

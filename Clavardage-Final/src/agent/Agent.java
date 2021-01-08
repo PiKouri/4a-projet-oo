@@ -7,8 +7,6 @@ import java.util.Comparator;
 
 import datatypes.*;
 import userInterface.Interface;
-import userInterface.User;
-import userInterface.GraphicalElements.Panel4;
 
 public class Agent{
 	
@@ -17,7 +15,7 @@ public class Agent{
 	/**Enable/disable debug informations*/
 	public static boolean debug = true;
 	/**Timeout used when checking username availability*/
-	public static long timeout = 1000;
+	public static int timeout = 1000;
 	/**Port number used for broadcast connections*/
 	public static int broadcastPortNumber = 4445;
 	/**Default port number used for outgoing TCP connections*/
@@ -31,10 +29,14 @@ public class Agent{
 	
 /*-----------------------Attributs privés-------------------------*/
 	
-	/**User of this Agent*/
-	protected User me;
+	/**Username of the user of this Agent*/
+	protected String username;
 	/**For the first connection*/
 	protected String tempName; 
+	/**IP Address localhost*/
+	protected InetAddress localhost;	
+	/**Our Extern_id (0 if intern, 1 if extern*/
+	protected int extern_id = 0;
 	/**True when first connection (or after reconnection)*/
 	protected boolean isFirstConnection;
 	/**True when reconnection (or after reconnection)*/
@@ -62,30 +64,19 @@ public class Agent{
      * 
      * @param me Object User representing the actual user
      */
-	public Agent(User me) throws IOException {
-		this.me = me;
+	public Agent() throws IOException {
+		this.username="";
+		this.localhost=InetAddress.getLocalHost();
 		this.isFirstConnection=true;
 		this.isReconnection=false;
 		this.isDisconnected = false;
-		
-		this.usernameManager = new UsernameManager(this);
-		this.databaseManager = new DatabaseManager(this);
+
 		this.networkManager = new NetworkManager(this);
+		this.databaseManager = new DatabaseManager(this);
+		this.usernameManager = new UsernameManager(this);
 		this.messageManager = new MessageManager(this);
 		this.userStatusManager = new UserStatusManager(this);
 		Interface.notifyAllOK();
-	}
-	
-
-/*-----------------------Classes - Comparateur pour trier les listes dans l'ordre alphabétique-------------------------*/
-
-
-	private class NameSorter implements Comparator<User> 
-	{
-		@Override
-		public int compare(User u1, User u2) {
-			return u1.getUsername().compareToIgnoreCase(u2.getUsername());
-		}
 	}
 	
 	
@@ -103,32 +94,21 @@ public class Agent{
 	public void chooseUsername(String name) {
 		this.tempName=name;
 		boolean ok=false;
-		if ((!this.isFirstConnection ||this.isReconnection) && name.equals(this.me.getUsername())) ok = true;
+		if ((!this.isFirstConnection ||this.isReconnection) && name.equals(this.username)) ok = true;
 		else ok = this.usernameManager.checkUsernameAvailability(name);
 		if (ok) {
-			if (!this.isFirstConnection) {
-				if (!this.me.getUsername().equals(name))
-					this.networkManager.sendBroadcast("changeUsername "+ this.me.getUsername() + " " + name);
-				this.usernameManager.changeUsername(this.me,name);
-				this.me.changeUsername(name);
-			} else {
-				this.usernameManager.addUsername(this.me,name);
-				this.me.changeUsername(name);
-				
-				final class RunGetOldInfos extends Thread {
-					public RunGetOldInfos(){
-					}
-					public void run(){
-						//try {Thread.sleep(5000);} catch (Exception e) {} // Attente pour vérification
-				    	if (!isReconnection) {
-							databaseManager.addUser(me);
-							databaseManager.getOldInformations();
-						}
-						isFirstConnection=false;
-						networkManager.sendBroadcast("connect " + me.getUsername());
-				    }
+			if (!this.isFirstConnection) { // Not first connection
+				if (!this.username.equals(name)) {
+					this.networkManager.sendBroadcast("changeUsername "+ this.username + " " + name);
+					String oldUsername = this.username;
+					this.username = name;
+					this.usernameManager.userChangeUsername(oldUsername, name);
 				}
-				(new RunGetOldInfos()).start();
+			} else { // First connection
+				this.username = name;
+				databaseManager.addUser(localhost,name,1,this.extern_id);
+				isFirstConnection=false;
+				networkManager.sendBroadcast("connect " + username);
 			}
 			Interface.notifyUsernameAvailable();
 			if (this.isReconnection)this.isReconnection=false;
@@ -145,9 +125,9 @@ public class Agent{
      */
 	public ArrayList<String> viewActiveUsernames(){
 		ArrayList<String> list = new ArrayList<String>();
-		this.userStatusManager.getActiveUsers().sort(new NameSorter());
-		for (User user : this.userStatusManager.getActiveUsers()) {
-			list.add(user.getUsername());
+		this.userStatusManager.getActiveUsers().sort(Comparator.comparing(String::toString));
+		for (String username : this.userStatusManager.getActiveUsers()) {
+			list.add(username);
 		}
 		//list.sort;
 		return list;
@@ -159,12 +139,9 @@ public class Agent{
      * @return List of all disconnected usernames
      */
 	public ArrayList<String> viewDisconnectedUsernames(){
-		ArrayList<String> list = new ArrayList<String>();
-		this.userStatusManager.getDisconnectedUsers().sort(new NameSorter());
-		for (User user : this.userStatusManager.getDisconnectedUsers()) {
-			list.add(user.getUsername());
-		}
-		return list;
+		this.userStatusManager.getDisconnectedUsers().sort(
+						Comparator.comparing(String::toString));
+		return this.userStatusManager.getDisconnectedUsers();
 	}
 	
 	/**
@@ -176,9 +153,7 @@ public class Agent{
      * @return List of all messages
      */
 	public ArrayList<Message> getMessageHistory(String username){
-		User u = this.usernameManager.nameResolve(username);
-		if (u!=null)return this.messageManager.getMessages(u);
-		else return null; // Erreur sur le nom, Impossible avec l'interface graphique normalement
+		return this.messageManager.getMessages(username);
 	}
 	
 	/**
@@ -191,10 +166,7 @@ public class Agent{
      */
 	public void sendMessage(String dest, Message message) {
 		if (Agent.debug) this.getNetworkManager().printAll();
-		User user = this.usernameManager.nameResolve(dest);
-		if (user == null) System.out.printf("Could not resolve username : %s\n", dest);
-		else this.messageManager.sendMessage(user,message);
-		//this.messageManager.sendMessage(dest,message);
+		this.messageManager.sendMessage(dest,message);
 	}
 	
 	/**
@@ -203,9 +175,9 @@ public class Agent{
      * <br>It will send a "disconnect" broadcast message to notify other users
      * <br>UDP Message template : "disconnect username"
      */
-	public void disconnect() throws IOException {
+	public void disconnect() {
 		if (!this.isFirstConnection && !this.isDisconnected) {
-			this.networkManager.sendBroadcast("disconnect " + this.me.getUsername());
+			this.networkManager.sendBroadcast("disconnect " + this.username);
 			this.networkManager.stopAll();
 			//on met tous les utilisateurs comme déconnectés lorsque l'on se déconnecte
 			this.userStatusManager.putAllUsersDisconnected();
@@ -232,10 +204,10 @@ public class Agent{
 	}
 	
 	/**
-     * Get the User associated to the Agent
+     * Get the Username associated to the Agent
      */
-	public User getUser() {
-		return this.me;
+	public String getUsername() {
+		return this.username;
 	}
 
 	
@@ -276,6 +248,17 @@ public class Agent{
      */
 	protected DatabaseManager getDatabaseManager() {
 		return this.databaseManager;
+	}
+	
+	
+/*-----------------------Méthodes - Erreur-------------------------*/
+	
+	
+	public static final void errorMessage(String s, Exception e) {
+		System.out.printf(s);
+		System.out.println(e.getMessage());
+		e.printStackTrace();
+        System.exit(-1);
 	}
 	
 }

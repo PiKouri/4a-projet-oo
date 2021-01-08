@@ -40,8 +40,8 @@ public class PropertiesReader {
 			Agent.presenceServerIPAddress=presenceServerIPAddress;
 			Agent.databaseFileName=databaseFileName;
 		} catch (Exception e) {
-			System.out.printf("ERROR : Can't read properties file (config.properties) at %s\n", propFileName);
-			System.exit(-1);
+        	Agent.errorMessage(
+					String.format("ERROR Can't read properties file (config.properties) at %s\n", propFileName), e);
 		} finally {
 			if (inputStream != null) {
 				inputStream.close();

@@ -3,19 +3,19 @@ package agent;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
-
-import datatypes.MyMap;
-import userInterface.User;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class NetworkManager {
 
 	/**The agent that created this NetworkManager*/
 	private Agent agent;
 	
-	/**MyMap that associates a User to a UserSocket*/
-	private MyMap<User,UserSocket> mapSockets;
-	/**MyMap that associates a User to a InetAddress*/
-	private MyMap<User, InetAddress> mapAddresses;
+	/**MyMap that associates a username to a UserSocket*/
+	private Map<String,UserSocket> mapSockets;
 		
 	/**TCPServer that will manage incoming TCP connections*/
 	private TCPServer connectionServer;
@@ -26,13 +26,13 @@ public class NetworkManager {
 	
 /*
  * Message type :
- * "connect username" -> Pour notifier notre arrivée et que les autres utilisateurs se connectent
- * "disconnect username" -> Pour notifier notre départ
+ * "connect username externId" -> Pour notifier notre arrivée et que les autres utilisateurs se connectent
+ * "disconnect username externId" -> Pour notifier notre départ
  * "changeUsername oldUsername newUsername" -> Pour notifier le changement de notre username
  * "checkUsernameAvailability username" -> Requête demandant la disponibilité de l'username
  * "tellUsernameAvailability username true/false" -> Réponse notifiant la disponibilité(ou non) de l'username
- * "canAccess username" -> Après avoir reçu un "connect", renvoie "canAccess" pour notifier notre adresse IP au nouvel arrivant
- * "updateDisconnectedUsers username address" -> Après avoir reçu un "connect", met à jour les utilisateurs déconnectés du nouvel arrivant
+ * "canAccess username externId" -> Après avoir reçu un "connect", renvoie "canAccess" pour notifier notre adresse IP au nouvel arrivant
+ * "updateDisconnectedUsers username address externId" -> Après avoir reçu un "connect", met à jour les utilisateurs déconnectés du nouvel arrivant
 */
 
 /*-----------------------Constructeurs-------------------------*/
@@ -53,13 +53,23 @@ public class NetworkManager {
 		this.udpServer = new UDPServer(this.agent);
 		this.connectionServer = new TCPServer(this.agent);
 
-		this.mapSockets = new MyMap<User,UserSocket>();
-		this.mapAddresses = new MyMap<User,InetAddress>();
+		this.mapSockets = new HashMap<>();
+		
+		this.checkInternOrExtern();
 	}
 	
 	
 /*-----------------------Méthodes - Réseau-------------------------*/
 	
+	/**
+     * This method checks if the PresenceServer is on the same broadcast network or if we are a extern user
+     *  
+     */
+	private void checkInternOrExtern() {
+		// TODO Auto-generated method stub
+		
+	}
+
 	/**
      * This method sends a broadcast message on all available broadcast addresses
      *  
@@ -91,9 +101,8 @@ public class NetworkManager {
 			// Vérifie la disponibilité du nom (dans notre table local)
 			boolean ok = this.agent.getUsernameManager().checkUsernameAvailability(username);
 			// Envoie vrai si le nom est inconnu ...
-			if (!(username.equals(this.agent.me.getUsername())) && !ok) {
-				User user = this.agent.getUsernameManager().nameResolve(username);
-				ok = user.getAddress().equals(address);
+			if (!(username.equals(this.agent.getUsername())) && !ok) {
+				ok = this.getAddress(username).equals(address);
 			// ... ou si le nom est connu mais que l'utilisateur demandant est le même (adressse IP)
 			}
 			this.udpClient.sendUDP("tellUsernameAvailability "+username+" "+ ok, address);
@@ -113,7 +122,7 @@ public class NetworkManager {
      */
 	protected void tellCanAccess(InetAddress address) {
 		if (!this.agent.isFirstConnection) {
-			this.udpClient.sendUDP("canAccess "+this.agent.me.getUsername(), address);
+			this.udpClient.sendUDP("canAccess "+this.agent.getUsername(), address);
 			// Une nouvelle personne veut qu'on se connecte à son serveur : on lui donne notre IP d'abord (pour faire le lien IP <-> Username)
 		}
 	}
@@ -126,10 +135,11 @@ public class NetworkManager {
      */
 	protected void tellDisconnectedUsers(InetAddress address) {
 		if (!this.agent.isFirstConnection) {
-			for (User disconnectedUser : this.agent.getUserStatusManager().getDisconnectedUsers()) {
-				String disconnectedUsername = disconnectedUser.getUsername();
-				String disconnectedAddress = disconnectedUser.getAddress().toString();
-				this.udpClient.sendUDP("updateDisconnectedUsers "+ disconnectedUsername+" "+disconnectedAddress, address);
+			for (String username : this.agent.getUserStatusManager().getDisconnectedUsers()) {
+				String disconnectedAddress = this.agent.getNetworkManager().addressToString(
+						this.agent.getNetworkManager().getAddress(username));
+				int externId = this.agent.getNetworkManager().getExternId(username);
+				this.udpClient.sendUDP("updateDisconnectedUsers "+ username+" "+disconnectedAddress+" "+externId, address);
 			}
 		}
 	}
@@ -138,85 +148,102 @@ public class NetworkManager {
      * This method adds a new UserSocket to the local list after a new connection was established
      *  
      * @param socket Socket from which we create the UserSocket
+     * @param externId Extern id of the user we add (0 if intern user)
      */
-	protected void newActiveUserSocket(Socket socket) {
+	protected void newActiveUserSocket(Socket socket, int externId) {
 		// Le thread attend que l'on reçoive l'adresse de l'utilisateur avant de pouvoir créer le UserSocket
 		if (!this.agent.isFirstConnection) {
 			final class MyThread extends Thread {
-				private Agent agent; private NetworkManager nm; private Socket socket;
-				public MyThread(Agent agent,NetworkManager nm, Socket socket) {this.agent=agent;this.nm=nm;this.socket=socket;}
+				private NetworkManager nm; private Socket socket;
+				public MyThread(NetworkManager nm, Socket socket) {this.nm=nm;this.socket=socket;}
 				public void run() {
-					User user = null;
+					String username ="";
 					synchronized(this.nm) {
-						while (user==null) {
+						while (username.equals("")) {
 							//if (Agent.debug) System.out.printf("Could not get User from address : %s -> Waiting for canAccess\n",socket.getInetAddress());
 							try {this.nm.wait(Agent.timeout);} catch (InterruptedException e) {}
-							user = this.nm.mapAddresses.getUser(socket.getInetAddress());
+							username=this.nm.agent.getUsernameManager().getUsername(socket.getInetAddress(),externId);
 						}
 					}
-					if (nm.getSocket(user)!=null) {
-						if (Agent.debug) System.out.printf("Ignored creating UserSocket: "+user.getUsername()+"\n");
+					if (this.nm.getSocket(username)!=null) {
+						if (Agent.debug) System.out.printf("Ignored creating UserSocket: "+username+"\n");
 					}else {
-						if (Agent.debug) System.out.printf("New socket connected: "+user.getUsername()+"\n");
-						this.nm.mapSockets.putUser(user, new UserSocket(user, this.agent, socket));
+						if (Agent.debug) System.out.printf("New socket connected: "+username+"\n");
+						this.nm.mapSockets.put(username, new UserSocket(username, this.nm.agent, socket));
 						if (Agent.debug) nm.printAll();
 					}
 				}
 			}
-			(new MyThread(this.agent,this,socket)).start();
+			(new MyThread(this,socket)).start();
 		}
 	}
 		
 	
 /*-----------------------Méthodes - Getteurs et setteurs-------------------------*/
 		
-	/**
-     * This method returns the MyMap of known addresses associated to users
-     * 
-     * @return MyMap of known addresses associated to users
-     */
-	protected MyMap<User, InetAddress> getMapAddresses() { // A voir pour enlever
-		return this.mapAddresses;
-	}
 	
 	/**
-     * This method returns the user associated to a specific IP address
-     *
-     * @param address Address that we want to resolve
-     * 
-     * @return The user associated to the IP address
-     */
-	protected User addressResolve(InetAddress address) {
-		return this.mapAddresses.getUser(address);
-	}
-	
-	/**
-     * This method returns the user associated to a specific UserSocket
+     * This method returns the username associated to a specific UserSocket
      *
      * @param usocket UserSocket that we want to resolve
      * 
-     * @return The user associated to the user socket
+     * @return The username associated to the user socket
      */
-	protected User socketResolve(UserSocket uSocket) {
-		return this.mapSockets.getUser(uSocket);
+	protected String socketResolve(UserSocket uSocket) {
+		return uSocket.username;
 	}
 	
 	/**
      * This method returns the UserSocket associated to this user
      *
-     * @param user 
+     * @param username
      */
-	protected UserSocket getSocket(User user) {
-		return this.mapSockets.getValue(user);
+	protected UserSocket getSocket(String username) {
+		return this.mapSockets.get(username);
 	}
 	
 	/**
-     * This method returns the IP Address associated to this user
+     * This method returns the IP Address associated to this username
      *
-     * @param user 
+     * @param username
+     * 
+     * @return The IP Address
      */
-	protected InetAddress getAddress(User user) {
-		return this.mapAddresses.getValue(user);
+	protected InetAddress getAddress(String username) {
+		try {
+			PreparedStatement pstmt  = 
+					this.agent.getDatabaseManager().getConnection().prepareStatement(
+							this.agent.getDatabaseManager().selectByName);
+	        pstmt.setString(1,username);
+	        ResultSet rs  = pstmt.executeQuery();
+	        return InetAddress.getByName(rs.getString("address"));
+		} catch (Exception e) {
+			Agent.errorMessage(
+					String.format("ERROR when trying to get address of user %s in the database\n",username), e);
+		}
+        return null; // Pas accessible
+	}
+	
+	/**
+     * This method returns the extern id associated to this username
+     *
+     * @param username
+     * 
+     * @return The extern id
+     */
+	protected int getExternId(String username) {
+		try {
+			PreparedStatement pstmt  = 
+					this.agent.getDatabaseManager().getConnection().prepareStatement(
+							this.agent.getDatabaseManager().selectByName);
+	        pstmt.setString(1,username);
+	        ResultSet rs  = pstmt.executeQuery();
+	        return Integer.valueOf(rs.getString("externId"));
+		} catch (Exception e) {
+			Agent.errorMessage(
+					String.format("ERROR when trying to get externId of user %s in the database\n",username), e);
+		}
+        return 0; // Pas accessible
 	}
 	
 	/**
@@ -229,23 +256,28 @@ public class NetworkManager {
 	}
 	
 	/**
-     * This method removes the UserSocket associated to a specific user
+     * This method removes the UserSocket associated to a specific username
      *
-     * @param user User that we want to remove 
+     * @param username User that we want to remove 
      */
-	protected void removeSocket(User user) {
-		this.mapSockets.getValue(user).interrupt();
-		this.mapSockets.remove(user);
+	protected void removeSocket(String username) {
+		if (!username.equals(this.agent.getUsername())) {// If the user is not us
+			this.mapSockets.get(username).interrupt();
+			this.mapSockets.remove(username);
+		}
 	}
 	
 	/**
-     * This method adds an association of a user and a IP address
+     * This method changes the username associated to a UserSocket
      *
-     * @param user User that we want to add
-     * @param address Address that we want to add
+     * @param oldUsername
+     * @param newUsername
      */
-	protected void addAddress(User user, InetAddress address) {
-		this.mapAddresses.putUser(user, address);
+	protected void changeSocketUsername(String oldUsername, String newUsername) {
+		UserSocket us = this.getSocket(oldUsername);
+		us.username = newUsername;
+		this.mapSockets.remove(oldUsername);
+		this.mapSockets.put(newUsername,us);
 	}
 	
 	/**
@@ -256,7 +288,7 @@ public class NetworkManager {
 		this.connectionServer.interrupt();
 		this.connectionServer=null; // supprime le TCPServer et les Sockets associés
 		this.udpServer=null; // supprime l'UDPServer et les Sockets associés
-		for (User u : this.agent.getUserStatusManager().getActiveUsers())
+		for (String u : this.agent.getUserStatusManager().getActiveUsers())
 			this.removeSocket(u);; // interrompt tous les UserSockets
 		this.mapSockets.clear();
 	}
@@ -270,13 +302,63 @@ public class NetworkManager {
 	}
 	
 	/**
-     * This method prints both Addresses and UserSocket maps
+     * This method prints both UserSocket maps and Addresses from the database
      */
 	protected void printAll() {
 		System.out.println("Network maps");
-		System.out.println("	mapAddresses");
-		this.mapAddresses.printAll();
+		System.out.println("	Addresses");
+		try {
+			PreparedStatement pstmt  = 
+					this.agent.getDatabaseManager().getConnection().prepareStatement(
+							this.agent.getDatabaseManager().selectAll);
+	        ResultSet rs  = pstmt.executeQuery();
+	        // loop through the result set
+            while (rs.next()) {
+    	        System.out.printf("%s -> %s\n", rs.getString("username"), rs.getString("address"));
+            }
+		} catch (Exception e) {
+			Agent.errorMessage(
+					String.format("ERROR when trying to get all the address of the table users in the database\n"), e);
+		}
 		System.out.println("	mapSockets");
-		this.mapSockets.printAll();
+		for (String u: this.mapSockets.keySet()) {
+			System.out.printf("%s -> %s\n", u, this.mapSockets.get(u));
+		}
 	}
+	
+	/**
+     * Return true if the database contains this address
+     *
+     * @param address IP Address to check
+     * @return True if the database contains this address
+     */
+	protected boolean containsAddressAndExternId(InetAddress address, int externId) {
+		try {
+			PreparedStatement pstmt  = this.agent.getDatabaseManager().getConnection().prepareStatement(
+					this.agent.getDatabaseManager().selectByAddressAndExternId);
+			pstmt.setString(1, this.agent.getNetworkManager().addressToString(address));
+			pstmt.setInt(2, externId);
+	        ResultSet rs  = pstmt.executeQuery();
+	        return !(rs.isClosed());
+		} catch (SQLException e) {
+        	Agent.errorMessage(
+					String.format("ERROR when trying to check if address %s | externId %d is in the database\n",address,externId), e);
+		}
+		return true; // Pas accessible
+	}
+	
+	
+/*-----------------------Méthodes - Utilitaires-------------------------*/	
+	
+	
+	/**
+	 * Use this method to convert from address to String
+	 * 
+	 * @param address Address to convert
+	 * @return The address as a String
+	 */
+	public String addressToString(InetAddress address) {
+		return address.toString().split("/")[1];
+	}
+
 }

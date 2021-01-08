@@ -1,11 +1,6 @@
 package agent;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -13,33 +8,50 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 
-import datatypes.Message;
 import userInterface.Interface;
-import userInterface.User;
 
 public class DatabaseManager {
 
 	/**The agent that created this DatabaseManager*/
 	private Agent agent;
 	/**Connection to the database*/
-	Connection conn = null;
+	private Connection conn = null;
 	
-	/**Sql statement used to get elements by address*/
-	private final String selectAddress = "SELECT address, name "
+	/**Sql statement used to get elements by address (only used for checking if localhost is in the database)*/
+	protected final String selectByAddress = "SELECT address, username, status, externId "
             + "FROM users WHERE address = ?";
 	
+	/**Sql statement used to get elements by address and extern id*/
+	protected final String selectByAddressAndExternId = "SELECT address, username, status, externId "
+            + "FROM users WHERE address = ? AND externId = ?";
+	
+	/**Sql statement used to get elements by name*/
+	protected final String selectByName = "SELECT address, username, status, externId "
+            + "FROM users WHERE username = ?";
+	
+	/**Sql statement used to get all the elements in table users*/
+	protected final String selectAll = "SELECT address, username, status, externId FROM users ";
+	
+	/**Sql statement used to get all the connected users in table users*/
+	protected final String selectConnected = "SELECT address, username, status, externId FROM users WHERE status = 1";
+	
+	/**Sql statement used to get all the disconnected users in table users*/
+	protected final String selectDisconnected = "SELECT address, username, status, externId FROM users WHERE status = 0";
 /*
  * Database table users :
  * id
  * address
- * name
+ * username
+ * status (0=disconnected or 1=connected)
+ * externId (0=intern users or >0 for extern users)
  * 
  * example : 
  * 123
  * 127.0.0.1
  * myName
+ * 0
+ * 0 
  * 
  * Database table username_messages :
  * id
@@ -63,14 +75,7 @@ public class DatabaseManager {
 		this.agent=agent;
 		createNewDatabase(Agent.databaseFileName);
 		createUsersTable();
-		try {
-			InetAddress localhost = InetAddress.getLocalHost();
-			if (containsAddress(localhost)) {
-				Interface.notifyOldUsername(getUsername(localhost));
-			} else {
-				addUser(Interface.me);
-			}
-		} catch (UnknownHostException e) {}
+		checkOldDatabase();
 	}
 	
 	
@@ -94,8 +99,7 @@ public class DatabaseManager {
                 if (Agent.debug) System.out.println("A new database has been created.");
             }
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
-            System.exit(-1);
+        	Agent.errorMessage("ERROR when creating database\n", e);
         }
     }
     
@@ -114,34 +118,34 @@ public class DatabaseManager {
 	        String sql = "CREATE TABLE IF NOT EXISTS users (\n"
 	                + "	id integer PRIMARY KEY,\n"
 	                + " address text,\n"
-	                + "	name text\n"
+	                + "	username text,\n"
+	                + " status integer,\n"
+	                + " externId integer"
 	                + ");";
 			stmt.execute(sql);
 		} catch (SQLException e) {
-			System.out.println("ERROR when trying to create users table");
-			System.out.println(e.getMessage());
-            System.exit(-1);
+        	Agent.errorMessage("ERROR when trying to create users table\n", e);
 		}
 	}
 	
 	/**
      * Creates a messages table for the given user in the database
      *
+     * @param username Username of the user
      */
-	protected void createMessagesTable(User user) {
+	protected void createMessagesTable(String username) {
 		try {
 			Statement stmt = conn.createStatement();
-			if (Agent.debug) System.out.printf("New messages table for user %s in the database\n",user.getUsername());
+			if (Agent.debug) System.out.printf("New messages table for user %s in the database\n",username);
 			// SQL statement for creating a new table
-	        String sql = "CREATE TABLE IF NOT EXISTS messages_"+user.getUsername()+" (\n"
+	        String sql = "CREATE TABLE IF NOT EXISTS messages_"+username+" (\n"
 	                + "	id integer PRIMARY KEY,\n"
 	                + " message BLOB\n"
 	                + ");";
 			stmt.execute(sql);
 		} catch (SQLException e) {
-			System.out.println("ERROR when trying to create a messages table");
-			System.out.println(e.getMessage());
-            System.exit(-1);
+			Agent.errorMessage(
+					String.format("ERROR when trying to create a messages for user %s table\n",username), e);
 		}
 	}
 	
@@ -152,30 +156,36 @@ public class DatabaseManager {
 	/**
      * Adds a user to the database
      *
-     * @param newUser User to add
+     * @param address Address of the user we add
+     * @param username Username of the user we add
+     * @param status Int representing the status of the user we add (0=disconnected, 1=connected)
+     * @param externId Extern id of the user we add (0 if intern user)
      */
-	protected void addUser(User newUser){
+	protected void addUser(InetAddress address, String username, int status, int externId){
 		try {
-			if (containsAddress(newUser.getAddress())) {
-				if (Agent.debug) System.out.printf("Address %s for user %s already in the database we just change username\n",newUser.getAddress(),newUser.getUsername());
-				changeUsername(newUser.getAddress(),newUser.getUsername());
+			if (this.agent.getNetworkManager().containsAddressAndExternId(address,externId)) {
+				if (Agent.debug) System.out.printf("Address %s for user %s already in the database we just change username and status\n",address,username);
+				this.agent.getUsernameManager().userChangeUsername(
+						this.agent.getUsernameManager().getUsername(address,externId),username);
+				this.agent.getUserStatusManager().userChangeStatus(username, status);
 			} else {
-				if (Agent.debug) System.out.printf("New user added to the database\n");
+				if (Agent.debug) System.out.printf("New user %s | address %s | status %d | externId %d added to the database\n", username,this.agent.getNetworkManager().addressToString(address),status,externId);
 				
 				// Add info to the users table
-				String sql = "INSERT INTO users(address,name) VALUES(?,?)";
+				String sql = "INSERT INTO users(address,username,status,externId) VALUES(?,?,?,?)";
 				PreparedStatement pstmt = conn.prepareStatement(sql);
-		        pstmt.setString(1, newUser.getAddress().toString().split("/")[1]);
-				pstmt.setString(2, newUser.getUsername());
+		        pstmt.setString(1, this.agent.getNetworkManager().addressToString(address));
+				pstmt.setString(2, username);
+				pstmt.setInt(3, status);
+				pstmt.setInt(4, externId);
 		        pstmt.executeUpdate();
-		        
-		        // Create one messages table for this user
-		        createMessagesTable(newUser);
+		        if (!username.equals(this.agent.getUsername()))// If the user is not us
+			        // Create one messages table for this user
+			        createMessagesTable(username);
 			}
 		} catch (SQLException e) {
-			System.out.printf("ERROR when trying to add user %s to the database\n",newUser.getUsername());
-			System.out.println(e.getMessage());
-	        System.exit(-1);
+			Agent.errorMessage(
+					String.format("ERROR when trying to add user %s to the database\n",username), e);
 		}
 	}
 	
@@ -184,170 +194,59 @@ public class DatabaseManager {
 	
 	
 	/**
-     * Get username by address from the database
+     * Get the connection to the database
      *
-     * @param address IP Address of the user
-     * @return User object containing the username and the address
+     * @return The connection to the database
      */
-	protected String getUsername(InetAddress address) {
-		try {
-			PreparedStatement pstmt  = conn.prepareStatement(selectAddress);
-	        pstmt.setString(1,address.toString().split("/")[1]);
-	        ResultSet rs  = pstmt.executeQuery();
-	        return rs.getString("name");
-		} catch (SQLException e) {
-        	System.out.printf("ERROR when trying to get user from address %s in the database\n",address);
-			System.out.println(e.getMessage());
-	        System.exit(-1);
-		}
-        return null; // Pas accessible
+	protected Connection getConnection(){
+		return this.conn;
 	}
 	
 	/**
-     * Get the messages from a user from the database
-     *
-     * @param address IP Address of the user
-     * @return The messages history with this user
-     */
-	protected ArrayList<Message> getMessages(InetAddress address){
+	 * Check if agent was already used and notify old Username if so
+	 */
+	private void checkOldDatabase() {
 		try {
-			// Get name associated to this address
-	        String username = getUsername(address);
-	        
-	        // Get messages in the messages table associated to the user
-	        PreparedStatement pstmt  = conn.prepareStatement(
-	        		"SELECT message "+ "FROM messages_"+username);
+			PreparedStatement pstmt  = this.conn.prepareStatement(selectByAddress);
+			pstmt.setString(1, this.agent.getNetworkManager().addressToString(this.agent.localhost));
 	        ResultSet rs  = pstmt.executeQuery();
-	        ArrayList<Message> messages = new ArrayList<Message>();
-	        // loop through the result set
-            while (rs.next()) {
-		        // fetch the serialized object to a byte array
-	            byte[] st = (byte[])rs.getObject(1);
-	            ByteArrayInputStream baip = 
-	                new ByteArrayInputStream(st);
-	            ObjectInputStream ois = new ObjectInputStream(baip);
-	            // re-create the object
-	            Message message = (Message)ois.readObject();
-	            messages.add(message);
-            }
-	        return messages;
-		} catch (Exception e) {
-        	System.out.printf("ERROR when trying to get messages from address %s in the database\n",address);
-			System.out.println(e.getMessage());
-	        System.exit(-1);
+	        if (!rs.isClosed()) {
+	        	Interface.notifyOldUsername(rs.getString("username"));
+	        }
+		} catch (SQLException e) {
+        	Agent.errorMessage("ERROR when trying to check if it is an old database\n", e);
 		}
-		return null; // Pas accessible
 	}
 	
 	/**
      * Get the old informations from the database and update the users and messages lists
      *
      */
-	protected void getOldInformations() {
+	/*protected void getOldInformations() {
 		try {
-			String sql = "SELECT address,name FROM users";
+			String sql = "SELECT address,username,status,externId FROM users";
 			Statement stmt = conn.createStatement();
 	        ResultSet rs    = stmt.executeQuery(sql);
 	        // loop through the result set
             while (rs.next()) {
             	String stringAddress = rs.getString("address");
             	InetAddress address = InetAddress.getByName(stringAddress);
-            	String name = rs.getString("name");
+            	String username = rs.getString("username");
                 
-            	if (!(Interface.me.getAddress().toString().split("/")[1].equals(stringAddress))) {
-	            	User user = new User(name,address);
-					ArrayList<Message> messages = getMessages(address);
+            	if (!(this.agent.getNetworkManager().addressToString(this.agent.localhost).equals(stringAddress))) {
+	            	User user = new User(username,address);
+					ArrayList<Message> messages = this.agent.getMessageManager().getMessages(address);
 	            	this.agent.getNetworkManager().addAddress(user, address);
-	            	this.agent.getUserStatusManager().userDisconnect(name, address);
-	            	this.agent.getUsernameManager().addUsername(user, name);
-	            	if (Agent.debug) System.out.printf("Address: %s | Name: %s | Number of messages: %d\n", address,name,messages.size());
+	            	this.agent.getUserStatusManager().userDisconnect(username, address);
+	            	this.agent.getUsernameManager().addUsername(user, username);
+	            	if (Agent.debug) System.out.printf("Address: %s | Name: %s | Number of messages: %d\n", address,username,messages.size());
 	            } else {
 	            	this.agent.getNetworkManager().addAddress(Interface.me, address);
-	            	this.agent.getUsernameManager().addUsername(Interface.me, name);
+	            	this.agent.getUsernameManager().addUsername(Interface.me, username);
 	            }
             }
 		} catch (Exception e) {
-			System.out.println("ERROR when trying to get old informations from the database");
-			System.out.println(e.getMessage());
-			e.printStackTrace();
-	        System.exit(-1);
+			Agent.errorMessage("ERROR when trying to get old informations from the database", e);
 		}
-	}
-	
-	/**
-     * Return true if the database contains this address
-     *
-     * @param address IP Address to check
-     * @return True if the database contains this address
-     */
-	protected boolean containsAddress(InetAddress address) {
-		try {
-			PreparedStatement pstmt  = conn.prepareStatement(selectAddress);
-			pstmt.setString(1, address.toString().split("/")[1]);
-	        ResultSet rs  = pstmt.executeQuery();
-	        return !(rs.isClosed());
-		} catch (SQLException e) {
-        	System.out.printf("ERROR when trying to check if address %s is in the database\n",address);
-			System.out.println(e.getMessage());
-	        System.exit(-1);
-		}
-		return true; // Pas accessible
-	}
-	
-	/**
-     * Change the username of selected user by address
-     *
-     * @param address Address of the user
-     * @param newUsername New Username of the user
-     */
-	protected void changeUsername(InetAddress address, String newUsername){
-		try {
-			String oldUsername = getUsername(address);
-			if (!(oldUsername.equals(newUsername))) {
-				if (Agent.debug) System.out.printf("Username changed in the database : %s -> %s\n",oldUsername,newUsername);
-				// Change username in table users
-				String sql = "UPDATE users SET name = ? "
-		                + "WHERE address = ?";
-				PreparedStatement pstmt = conn.prepareStatement(sql);
-				pstmt.setString(1, newUsername);
-				pstmt.setString(2, address.toString().split("/")[1]);
-		        pstmt.executeUpdate();
-		        // Change messages table's name
-		        sql = "ALTER TABLE messages_"+oldUsername+" RENAME TO messages_"+newUsername;
-		        Statement stmt = conn.createStatement();
-		        stmt.execute(sql);
-			}
-		} catch (SQLException e) {
-			System.out.printf("ERROR when trying to change username for address %s in the database\n",address);
-			System.out.println(e.getMessage());
-	        System.exit(-1);
-		}
-	}
-	
-	/**
-     * Add a message to the messages list from a user in the database
-     *
-     * @param message Message we want to add
-     * @param address IP Address of the user
-     */
-	protected void addMessage(InetAddress address, Message message){
-		try {
-			String username = getUsername(address);
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		    ObjectOutputStream oos = new ObjectOutputStream(baos);
-		    oos.writeObject(message);
-		    // serialize the employee object into a byte array
-		    byte[] messageAsBytes = baos.toByteArray();
-		    PreparedStatement pstmt = conn.prepareStatement
-		            ("INSERT INTO messages_"+username+" (message) VALUES(?)");
-		    ByteArrayInputStream bais = new ByteArrayInputStream(messageAsBytes);
-		    // bind our byte array  to the message column
-		    pstmt.setBinaryStream(1,bais, messageAsBytes.length);
-		    pstmt.executeUpdate();
-		} catch (Exception e) {
-        	System.out.printf("ERROR when trying to get messages from address %s in the database\n",address);
-			System.out.println(e.getMessage());
-	        System.exit(-1);
-		}
-	}
+	}*/
 }

@@ -2,20 +2,17 @@ package agent;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 import userInterface.Interface;
-import userInterface.User;
 
 public class UserStatusManager {
 
 	/**The agent that created this UserStatusManager*/
 	private Agent agent;
-
-	/**List of the active users*/
-	private ArrayList<User> activeUsers;
-	/**List of the disconnected users*/
-	private ArrayList<User> disconnectedUsers;
 
 
 	/*-----------------------Constructeurs-------------------------*/
@@ -28,8 +25,7 @@ public class UserStatusManager {
 	 */
 	protected UserStatusManager(Agent agent) {
 		this.agent=agent;
-		this.activeUsers = new ArrayList<User>();
-		this.disconnectedUsers = new ArrayList<User>();
+		this.putAllUsersDisconnected();
 	}
 
 
@@ -39,17 +35,13 @@ public class UserStatusManager {
 	/**
 	 * This methods updates the disconnected users' list when receiving "updateDisconnectedUsers" messages
 	 * 
-	 * @param user The user associated to the conversation
-	 * 
-	 * @return List of messages with the user
+	 * @param username The disconnected user
+	 * @param address Address of the disconnected user
+	 * @param extern_id Extern_id of the disconnected user (0 if intern user)
 	 * */
-	protected void updateDisconnectedUsers(String username, InetAddress address) {
-		if (verifyUniqAddress(this.disconnectedUsers,address) && verifyUniqAddress(this.activeUsers,address)) { // Si l'addresse n'est pas déjà connue, on l'ajoute
-			User user = new User(username,address);
-			this.disconnectedUsers.add(user);
-			this.agent.getUsernameManager().addUsername(user, username);
-			this.agent.getNetworkManager().addAddress(user, address);
-			this.agent.getDatabaseManager().addUser(user);
+	protected void updateDisconnectedUsers(String username, InetAddress address, int extern_id) {
+		if (!this.agent.getNetworkManager().containsAddressAndExternId(address,extern_id)) { // Si l'addresse n'est pas déjà connue, on l'ajoute
+			this.agent.getDatabaseManager().addUser(address,username,0,extern_id);
 		}
 	}
 
@@ -61,12 +53,8 @@ public class UserStatusManager {
 	 */
 	protected void userDisconnect(String username, InetAddress address) throws IOException { 
 		if (!this.agent.isFirstConnection) {
-			User user = this.agent.getUsernameManager().nameResolve(username);
-			//this.mapUsernames.remove(user);
-			this.agent.getNetworkManager().removeSocket(user);
-			this.activeUsers.remove(user);
-			this.disconnectedUsers.add(user);
-			Interface.notifyUserDisconnected(username);
+			this.agent.getNetworkManager().removeSocket(username);
+			this.userChangeStatus(username, 0);
 		}
 	}
 
@@ -75,53 +63,26 @@ public class UserStatusManager {
 	 *  
 	 * @param username Username of the user who connected
 	 * @param address Address of the user who connected
+	 * @param extern_id Extern_id of the user who connected (0 if intern user)
 	 */
-	protected void userConnect(String username, InetAddress address) { 
+	protected void userConnect(String username, InetAddress address, int extern_id) { 
 		if (!this.agent.isFirstConnection) {
-			User oldUser = this.agent.getNetworkManager().addressResolve(address);
-			if (oldUser==null) { // New address
-				if (Agent.debug) System.out.printf("New user connected : %s\n",username);
-				User user = new User(username, address);
-				this.agent.getUsernameManager().addUsername(user, username);
-				this.activeUsers.add(user);
-				if (Agent.debug) System.out.printf("New address : %s -> %s\n", address, user.getUsername());
-				this.agent.getNetworkManager().addAddress(user, address);
+			if (!this.agent.getNetworkManager().containsAddressAndExternId(address, extern_id)) { // New address+extern_id
+				if (Agent.debug) System.out.printf("New user connected : %s -> %s\n", address, username);
+				this.agent.getDatabaseManager().addUser(address,username,1,extern_id);
 				synchronized(this.agent.getNetworkManager()) {this.agent.getNetworkManager().notifyAll();}
-				this.agent.getDatabaseManager().addUser(user);
-			} else {
-				{
-					if (!(oldUser.getUsername().equals(username))) {
-						if (Agent.debug) System.out.printf("Old user reconnected : %s -> %s\n",oldUser.getUsername(), username);
-						Interface.notifyUsernameChanged(oldUser.getUsername(), username);
-						oldUser.changeUsername(username);
-						this.agent.getUsernameManager().changeUsername(oldUser, username);
-						Interface.notifyUserReconnected(username);
-					} else {
-						if (Agent.debug) System.out.printf("Old user reconnected : %s\n",username);
-						Interface.notifyUserReconnected(username);
-					}
+			} else { // Old User reconnected
+				String oldUsername = this.agent.getUsernameManager().getUsername(address, extern_id);
+				if (!(oldUsername.equals(username))) {
+					if (Agent.debug) System.out.printf("Old user reconnected : %s -> %s\n",oldUsername, username);
+					Interface.notifyUsernameChanged(oldUsername, username);
+					this.agent.getUsernameManager().userChangeUsername(oldUsername, username);
+				} else {
+					if (Agent.debug) System.out.printf("Old user reconnected : %s\n",username);
 				}
-				this.activeUsers.add(oldUser);
-				this.disconnectedUsers.remove(oldUser);		
+				this.userChangeStatus(username, 1);
 			} 
 		}
-	}
-
-	/**
-	 * This method verifies that no user from the list has the requested address
-	 *  
-	 * @param list List of the users
-	 * @param address Address that we want to check
-	 * 
-	 * @return True if no user from the list has the requested address
-	 */
-	private boolean verifyUniqAddress(ArrayList<User> list, InetAddress address) {
-		boolean ok = true;
-		for (User temp : list) {
-			ok = !temp.getAddress().equals(address);
-			if (!ok) break;
-		}
-		return ok;
 	}
 
 
@@ -129,29 +90,94 @@ public class UserStatusManager {
 
 
 	/**
-	 * This method returns the list of disconnected users
+	 * This method returns the list of disconnected users (String)
 	 * 
-	 * @return List of all disconnected users
+	 * @return List of all disconnected users (String)
 	 */
-	protected ArrayList<User> getDisconnectedUsers() {
+	protected ArrayList<String> getDisconnectedUsers() {
+		ArrayList<String> disconnectedUsers = new ArrayList<String>();
+		try {
+			PreparedStatement pstmt  = 
+					this.agent.getDatabaseManager().getConnection().prepareStatement(
+							this.agent.getDatabaseManager().selectDisconnected);
+	        ResultSet rs  = pstmt.executeQuery();
+	        // loop through the result set
+	        while (rs.next()) {
+	        	String username = rs.getString("username");
+	        	if (!username.equals(this.agent.getUsername()))
+	        		disconnectedUsers.add(username);
+	        }
+		} catch (Exception e) {
+        	Agent.errorMessage("ERROR when trying to get all disconnected users in table users in the database\n", e);
+		}
 		return disconnectedUsers;
 	}
 
 	/**
-	 * This method returns the list of active users
+	 * This method returns the list of active users (String)
 	 * 
-	 * @return List of all active users
+	 * @return List of all active users (String)
 	 */
-	protected ArrayList<User> getActiveUsers() {
+	protected ArrayList<String> getActiveUsers() {
+		ArrayList<String> activeUsers = new ArrayList<String>();
+		try {
+			PreparedStatement pstmt  = 
+					this.agent.getDatabaseManager().getConnection().prepareStatement(
+							this.agent.getDatabaseManager().selectConnected);
+	        ResultSet rs  = pstmt.executeQuery();
+	        // loop through the result set
+	        while (rs.next()) {
+	        	String username = rs.getString("username");
+	        	if (!username.equals(this.agent.getUsername()))
+	        		activeUsers.add(username);
+	        }
+		} catch (Exception e) {
+			Agent.errorMessage("ERROR when trying to get all active users in table users in the database\n",e);
+		}
 		return activeUsers;
 	}
 
 	/**
 	 * This method puts all active users as disconnected
-	 * <p>Note that this method is used when disconnecting
+	 * <p>Note that this method is used when disconnecting and also at first connection
 	 */
 	protected void putAllUsersDisconnected() {
-		for (User u : this.activeUsers) this.disconnectedUsers.add(u);
-		this.activeUsers=new ArrayList<User>();
+		try {
+			if (Agent.debug) System.out.printf("Putting all users as disconnected\n");
+			String sql = "UPDATE users SET status = 0 WHERE status = 1";
+			PreparedStatement pstmt = this.agent.getDatabaseManager().getConnection().prepareStatement(sql);
+	        pstmt.executeUpdate();
+		} catch (Exception e) {
+        	Agent.errorMessage("ERROR when trying to put all users as disconnected in table users in the database\n", e);
+		}
+	}
+	
+	/**
+     * This method changers the status of a user in the database
+     * 
+     * @param username
+     * @param status
+     */
+	protected void userChangeStatus(String username, int status) {
+		if (!this.agent.isFirstConnection || username.equals(this.agent.getUsername()) ) { // Not during First Connection
+			try {
+				if (Agent.debug) System.out.printf("User status changed in the database : %s -> %d\n",username,status);
+				InetAddress address = this.agent.getNetworkManager().getAddress(username);
+				int externId = this.agent.getNetworkManager().getExternId(username);
+				// Change username in table users
+				String sql = "UPDATE users SET status = ? "
+		                + "WHERE address = ? AND externId= ?";
+				PreparedStatement pstmt = this.agent.getDatabaseManager().getConnection().prepareStatement(sql);
+				pstmt.setInt(1, status);
+				pstmt.setString(2, this.agent.getNetworkManager().addressToString(address));
+				pstmt.setInt(3, externId);
+		        pstmt.executeUpdate();
+			} catch (SQLException e) {
+				Agent.errorMessage(
+						String.format("ERROR when trying to change status for user %s in the database\n",username), e);
+			}
+			if (status==1) Interface.notifyUserReconnected(username);
+			else Interface.notifyUserDisconnected(username);
+		}
 	}
 }

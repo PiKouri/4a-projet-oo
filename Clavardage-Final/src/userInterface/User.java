@@ -2,6 +2,10 @@ package userInterface;
 import java.io.Serializable;
 import java.net.InetAddress;
 
+/**
+ * @deprecated Not used in the project => use database
+ * */
+@Deprecated
 public class User implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
