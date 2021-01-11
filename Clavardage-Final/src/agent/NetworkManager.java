@@ -122,7 +122,7 @@ public class NetworkManager {
      */
 	protected void tellCanAccess(InetAddress address) {
 		if (!this.agent.isFirstConnection) {
-			this.udpClient.sendUDP("canAccess "+this.agent.getUsername(), address);
+			this.udpClient.sendUDP("canAccess "+this.agent.getUsername()+" "+this.agent.extern_id, address);
 			// Une nouvelle personne veut qu'on se connecte à son serveur : on lui donne notre IP d'abord (pour faire le lien IP <-> Username)
 		}
 	}
@@ -160,15 +160,15 @@ public class NetworkManager {
 					String username ="";
 					synchronized(this.nm) {
 						while (username.equals("")) {
-							//if (Agent.debug) System.out.printf("Could not get User from address : %s -> Waiting for canAccess\n",socket.getInetAddress());
+							//Agent.printAndLog(String.format("Could not get User from address : %s -> Waiting for canAccess\n",socket.getInetAddress()));
 							try {this.nm.wait(Agent.timeout);} catch (InterruptedException e) {}
 							username=this.nm.agent.getUsernameManager().getUsername(socket.getInetAddress(),externId);
 						}
 					}
 					if (this.nm.getSocket(username)!=null) {
-						if (Agent.debug) System.out.printf("Ignored creating UserSocket: "+username+"\n");
+						Agent.printAndLog(String.format("Ignored creating UserSocket: "+username+"\n"));
 					}else {
-						if (Agent.debug) System.out.printf("New socket connected: "+username+"\n");
+						Agent.printAndLog(String.format("New socket connected: "+username+"\n"));
 						this.nm.mapSockets.put(username, new UserSocket(username, this.nm.agent, socket));
 						if (Agent.debug) nm.printAll();
 					}
@@ -262,7 +262,10 @@ public class NetworkManager {
      */
 	protected void removeSocket(String username) {
 		if (!username.equals(this.agent.getUsername())) {// If the user is not us
-			this.mapSockets.get(username).interrupt();
+			UserSocket us = this.mapSockets.get(username);
+			if (us != null) {
+				us.interrupt();
+			}
 			this.mapSockets.remove(username);
 		}
 	}
@@ -275,9 +278,11 @@ public class NetworkManager {
      */
 	protected void changeSocketUsername(String oldUsername, String newUsername) {
 		UserSocket us = this.getSocket(oldUsername);
-		us.username = newUsername;
-		this.mapSockets.remove(oldUsername);
-		this.mapSockets.put(newUsername,us);
+		if (us != null) {
+			us.username = newUsername;
+			this.mapSockets.remove(oldUsername);
+			this.mapSockets.put(newUsername,us);
+		}
 	}
 	
 	/**

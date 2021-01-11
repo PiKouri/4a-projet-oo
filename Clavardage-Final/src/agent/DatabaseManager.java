@@ -89,14 +89,14 @@ public class DatabaseManager {
      */
     protected void createNewDatabase(String fileName) {
 
-        String url = "jdbc:sqlite:"+Agent.dir+"\\"+fileName;
+        String url = "jdbc:sqlite:"+Agent.dir+fileName;
         try {
         	Connection conn = DriverManager.getConnection(url);
             if (conn != null) {
             	this.conn=conn;
                 DatabaseMetaData meta = conn.getMetaData();
-                if (Agent.debug) System.out.println("The driver name is " + meta.getDriverName());
-                if (Agent.debug) System.out.println("A new database has been created.");
+                Agent.printAndLog(String.format("The driver name is " + meta.getDriverName()+"\n"));
+                Agent.printAndLog(String.format("A new database has been created.\n"));
             }
         } catch (SQLException e) {
         	Agent.errorMessage("ERROR when creating database\n", e);
@@ -113,7 +113,7 @@ public class DatabaseManager {
 	protected void createUsersTable() {
 		try {
 			Statement stmt = conn.createStatement();
-			if (Agent.debug) System.out.printf("New users table in the database\n");
+			Agent.printAndLog(String.format("New users table in the database\n"));
 			// SQL statement for creating a new table
 	        String sql = "CREATE TABLE IF NOT EXISTS users (\n"
 	                + "	id integer PRIMARY KEY,\n"
@@ -136,7 +136,7 @@ public class DatabaseManager {
 	protected void createMessagesTable(String username) {
 		try {
 			Statement stmt = conn.createStatement();
-			if (Agent.debug) System.out.printf("New messages table for user %s in the database\n",username);
+			Agent.printAndLog(String.format("New messages table for user %s in the database\n",username));
 			// SQL statement for creating a new table
 	        String sql = "CREATE TABLE IF NOT EXISTS messages_"+username+" (\n"
 	                + "	id integer PRIMARY KEY,\n"
@@ -164,12 +164,16 @@ public class DatabaseManager {
 	protected void addUser(InetAddress address, String username, int status, int externId){
 		try {
 			if (this.agent.getNetworkManager().containsAddressAndExternId(address,externId)) {
-				if (Agent.debug) System.out.printf("Address %s for user %s already in the database we just change username and status\n",address,username);
+				Agent.printAndLog(String.format(
+						"Address %s for user %s already in the database we just change username and status\n",
+						address,username));
 				this.agent.getUsernameManager().userChangeUsername(
 						this.agent.getUsernameManager().getUsername(address,externId),username);
 				this.agent.getUserStatusManager().userChangeStatus(username, status);
 			} else {
-				if (Agent.debug) System.out.printf("New user %s | address %s | status %d | externId %d added to the database\n", username,this.agent.getNetworkManager().addressToString(address),status,externId);
+				Agent.printAndLog(String.format(
+						"New user %s | address %s | status %d | externId %d added to the database\n",
+						username,this.agent.getNetworkManager().addressToString(address),status,externId));
 				
 				// Add info to the users table
 				String sql = "INSERT INTO users(address,username,status,externId) VALUES(?,?,?,?)";
@@ -239,7 +243,7 @@ public class DatabaseManager {
 	            	this.agent.getNetworkManager().addAddress(user, address);
 	            	this.agent.getUserStatusManager().userDisconnect(username, address);
 	            	this.agent.getUsernameManager().addUsername(user, username);
-	            	if (Agent.debug) System.out.printf("Address: %s | Name: %s | Number of messages: %d\n", address,username,messages.size());
+	            	Agent.printAndLog(String.format("Address: %s | Name: %s | Number of messages: %d\n", address,username,messages.size()));
 	            } else {
 	            	this.agent.getNetworkManager().addAddress(Interface.me, address);
 	            	this.agent.getUsernameManager().addUsername(Interface.me, username);

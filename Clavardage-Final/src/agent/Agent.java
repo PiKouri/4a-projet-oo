@@ -4,6 +4,10 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 import datatypes.*;
 import userInterface.Interface;
@@ -21,11 +25,13 @@ public class Agent{
 	/**Default port number used for outgoing TCP connections*/
 	public static int defaultPortNumber = 1234;
 	/**Current directory*/
-	public static final String dir = System.getProperty("user.dir");
+	public static final String dir = System.getProperty("user.dir")+"/";
 	/**Presence Server IP address*/
 	public static InetAddress presenceServerIPAddress;
 	/**Database Name*/
 	public static String databaseFileName="database.db";
+	/**Logs*/
+	public static Logger logger = Logger.getLogger("MyLog");
 	
 /*-----------------------Attributs privés-------------------------*/
 	
@@ -35,7 +41,7 @@ public class Agent{
 	protected String tempName; 
 	/**IP Address localhost*/
 	protected InetAddress localhost;	
-	/**Our Extern_id (0 if intern, 1 if extern*/
+	/**Our Extern_id (0 if intern, >0 if extern*/
 	protected int extern_id = 0;
 	/**True when first connection (or after reconnection)*/
 	protected boolean isFirstConnection;
@@ -65,6 +71,13 @@ public class Agent{
      * @param me Object User representing the actual user
      */
 	public Agent() throws IOException {
+		// Logs
+		FileHandler fh = new FileHandler(Agent.dir+"log.log");  
+        Agent.logger.addHandler(fh);
+        logger.setUseParentHandlers(false);
+        SimpleFormatter formatter = new SimpleFormatter();  
+        fh.setFormatter(formatter); 
+        
 		this.username="";
 		this.localhost=InetAddress.getLocalHost();
 		this.isFirstConnection=true;
@@ -108,7 +121,7 @@ public class Agent{
 				this.username = name;
 				databaseManager.addUser(localhost,name,1,this.extern_id);
 				isFirstConnection=false;
-				networkManager.sendBroadcast("connect " + username);
+				networkManager.sendBroadcast("connect " + username + " " + this.extern_id);
 			}
 			Interface.notifyUsernameAvailable();
 			if (this.isReconnection)this.isReconnection=false;
@@ -165,7 +178,6 @@ public class Agent{
      * @param message Message that the user wants to send
      */
 	public void sendMessage(String dest, Message message) {
-		if (Agent.debug) this.getNetworkManager().printAll();
 		this.messageManager.sendMessage(dest,message);
 	}
 	
@@ -199,7 +211,7 @@ public class Agent{
 			this.isDisconnected=false;
 			this.networkManager.startAll();
 		} else {
-			if (Agent.debug) System.out.printf("\nNot disconnected, cannot reconnect\n");
+			Agent.printAndLog(String.format("\nNot disconnected, cannot reconnect\n"));
 		}
 	}
 	
@@ -251,14 +263,31 @@ public class Agent{
 	}
 	
 	
-/*-----------------------Méthodes - Erreur-------------------------*/
+/*-----------------------Méthodes - Erreur et débug-------------------------*/
+
 	
-	
+	/**
+	 * Method used to print ERROR message + exception infos
+	 * 
+	 * @param s
+	 * @param e
+	 * */
 	public static final void errorMessage(String s, Exception e) {
 		System.out.printf(s);
 		System.out.println(e.getMessage());
 		e.printStackTrace();
+		logger.info(s);
+		logger.log(Level.INFO,e.getMessage(),e);
         System.exit(-1);
 	}
 	
+	/**
+	 * Method used to print infos in debug mode and add logs
+	 * 
+	 * @param message
+	 * */
+	public static final void printAndLog(String message) {
+		if (Agent.debug) System.out.printf(message);
+		logger.info(message);
+	}
 }

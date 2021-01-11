@@ -73,7 +73,7 @@ private static final long serialVersionUID = 1L;
 				isUpdating=true;
 				try {Thread.sleep(200);} catch (Exception e) {} // Attente pour affichage
 				widthForMessages = scrollPane.getWidth()-50;
-				if (Agent.debug) System.out.println("Update Voir Messages");
+				Agent.printAndLog(String.format("Update Voir Messages\n"));
 		    	Interface.voirMessages(dest);
 		    	isUpdating=false;
 			}
@@ -90,7 +90,7 @@ private static final long serialVersionUID = 1L;
 		public void run(){
 			try {Thread.sleep(200);} catch (Exception e) {} // Attente pour affichage
 	        widthForMessages = scrollPane.getWidth()-50;
-	        if (Agent.debug) System.out.println("Update Ajout Message");
+	        Agent.printAndLog(String.format("Update Ajout Message\n"));
 	    	panel.ajoutMessage(username, msg);
 	    	panel.revalidate();
 	    	panel.repaint();
@@ -222,7 +222,7 @@ private static final long serialVersionUID = 1L;
 		int i = jc.showOpenDialog(this);
 		if (i!=1) {
 			String filename = jc.getSelectedFile().getAbsolutePath() ;
-			if (Agent.debug) System.out.println(filename);
+			Agent.printAndLog("File opened: "+String.format(filename)+"\n");
 			this.filename=filename;
 			tf.setText(filename);
 		}
@@ -237,7 +237,9 @@ private static final long serialVersionUID = 1L;
 		    File fileToSave = fileChooser.getSelectedFile();
 		    try {
 				Files.copy(((MyFile)msg).getFile().toPath(),fileToSave.toPath());
-			} catch (IOException e1) {}
+			} catch (IOException e1) {
+				Agent.errorMessage("ERROR Could not save file", e1);
+			}
 		}
 	}
 	

@@ -66,7 +66,13 @@ public class Interface {
 	}
 	
 	public static void popUp(String message) { // Quand quelqu'un change de pseudo par exemple
-		JOptionPane.showMessageDialog(Interface.mainWindow, message);
+		final class MyThread extends Thread {
+			public MyThread() {}
+			public void run() {
+				JOptionPane.showMessageDialog(Interface.mainWindow, message);
+				}
+		}
+		(new MyThread()).start();
 	}
 	
 	

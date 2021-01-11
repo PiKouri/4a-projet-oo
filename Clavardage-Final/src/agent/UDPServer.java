@@ -45,7 +45,7 @@ public class UDPServer extends Thread {
 	 * @param agent The agent that created this UDPServer
 	 */
 	protected UDPServer(Agent agent) throws SocketException {
-		if (Agent.debug) System.out.println("UDP Server created");
+		Agent.printAndLog(String.format("UDP Server created\n"));
 		this.agent = agent;
 		this.socket = new DatagramSocket(Agent.broadcastPortNumber);
 		try {
@@ -83,7 +83,7 @@ public class UDPServer extends Thread {
 
 	@Override
 	public void interrupt() {
-		if (Agent.debug) System.out.println("UDP Server interrupted");
+		Agent.printAndLog(String.format("UDP Server interrupted\n"));
 		this.running = false;
 		socket.close();
 	}
@@ -110,7 +110,7 @@ public class UDPServer extends Thread {
 			= new String(packet.getData(), 0, packet.getLength());
 			received = received.replaceAll("\0\0", "");
 			received = received.replaceAll("(\0)$", "");
-			if (Agent.debug) System.out.printf("UDP Server - %s:%d said : %s.\n \n", address.toString(), port , received); 
+			Agent.printAndLog(String.format("UDP Server - %s:%d said : %s.\n \n", address.toString(), port , received)); 
 
 			String[] strip = received.split(" ");
 
@@ -121,7 +121,7 @@ public class UDPServer extends Thread {
 
 			case "connect" :
 				if (!this.agent.isFirstConnection) {
-					int externId = Integer.valueOf(strip[3]);
+					int externId = Integer.valueOf(strip[2]);
 					this.agent.getNetworkManager().tellCanAccess(address);
 					this.agent.getUserStatusManager().userConnect(username, address, externId);
 					try {
@@ -151,13 +151,11 @@ public class UDPServer extends Thread {
 				synchronized(this.agent.getUsernameManager()) {this.agent.getUsernameManager().notifyAll();}
 				break;
 			case "canAccess" : 
-				int externId = Integer.valueOf(strip[3]);
+				int externId = Integer.valueOf(strip[2]);
 				this.agent.getUserStatusManager().userConnect(username, address, externId);
 				break;
 			case "updateDisconnectedUsers" :
 				String disconnectedAddress = strip[2];
-				// Format d'adresse après .toString : \192.168.1.1
-				disconnectedAddress = disconnectedAddress.split("/")[1]; 
 				int externId2 = Integer.valueOf(strip[3]);
 				try {
 					InetAddress ipAddress = InetAddress.getByName(disconnectedAddress);

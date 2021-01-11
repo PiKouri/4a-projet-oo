@@ -11,7 +11,7 @@ import agent.Agent;
 public class PropertiesReader {
 	public void getProperties() throws IOException {
 		InputStream inputStream = null;
-		String propFileName = "config.properties";
+		String propFileName = Agent.dir+"config.properties";
 		try {
 			Properties prop = new Properties();	
 			//inputStream = getClass().getClassLoader().getResourceAsStream(propFileName);

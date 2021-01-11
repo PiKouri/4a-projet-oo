@@ -37,7 +37,7 @@ public class UserSocket extends Thread {
      */
 	public UserSocket(String username, Agent agent, Socket socket){
 		this.username=username;
-		if (Agent.debug) System.out.println("UserSocket "+ this.username +" created");
+		Agent.printAndLog(String.format("UserSocket "+ this.username +" created\n"));
 		this.agent=agent;
 		this.socket=socket;
 		try {
@@ -61,7 +61,7 @@ public class UserSocket extends Thread {
 	
 	@Override
 	public void interrupt(){
-		if (Agent.debug) System.out.println("UserSocket "+ this.username +" interrupted");
+		Agent.printAndLog(String.format("UserSocket "+ this.username +" interrupted\n"));
 		this.running=false;
 		try {
 			this.socket.close();

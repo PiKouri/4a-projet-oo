@@ -68,17 +68,16 @@ public class UserStatusManager {
 	protected void userConnect(String username, InetAddress address, int extern_id) { 
 		if (!this.agent.isFirstConnection) {
 			if (!this.agent.getNetworkManager().containsAddressAndExternId(address, extern_id)) { // New address+extern_id
-				if (Agent.debug) System.out.printf("New user connected : %s -> %s\n", address, username);
+				Agent.printAndLog(String.format("New user connected : %s -> %s\n", address, username));
 				this.agent.getDatabaseManager().addUser(address,username,1,extern_id);
 				synchronized(this.agent.getNetworkManager()) {this.agent.getNetworkManager().notifyAll();}
 			} else { // Old User reconnected
 				String oldUsername = this.agent.getUsernameManager().getUsername(address, extern_id);
 				if (!(oldUsername.equals(username))) {
-					if (Agent.debug) System.out.printf("Old user reconnected : %s -> %s\n",oldUsername, username);
-					Interface.notifyUsernameChanged(oldUsername, username);
+					Agent.printAndLog(String.format("Old user reconnected : %s -> %s\n",oldUsername, username));
 					this.agent.getUsernameManager().userChangeUsername(oldUsername, username);
 				} else {
-					if (Agent.debug) System.out.printf("Old user reconnected : %s\n",username);
+					Agent.printAndLog(String.format("Old user reconnected : %s\n",username));
 				}
 				this.userChangeStatus(username, 1);
 			} 
@@ -143,7 +142,7 @@ public class UserStatusManager {
 	 */
 	protected void putAllUsersDisconnected() {
 		try {
-			if (Agent.debug) System.out.printf("Putting all users as disconnected\n");
+			Agent.printAndLog(String.format("Putting all users as disconnected\n"));
 			String sql = "UPDATE users SET status = 0 WHERE status = 1";
 			PreparedStatement pstmt = this.agent.getDatabaseManager().getConnection().prepareStatement(sql);
 	        pstmt.executeUpdate();
@@ -161,7 +160,7 @@ public class UserStatusManager {
 	protected void userChangeStatus(String username, int status) {
 		if (!this.agent.isFirstConnection || username.equals(this.agent.getUsername()) ) { // Not during First Connection
 			try {
-				if (Agent.debug) System.out.printf("User status changed in the database : %s -> %d\n",username,status);
+				Agent.printAndLog(String.format("User status changed in the database : %s -> %d\n",username,status));
 				InetAddress address = this.agent.getNetworkManager().getAddress(username);
 				int externId = this.agent.getNetworkManager().getExternId(username);
 				// Change username in table users

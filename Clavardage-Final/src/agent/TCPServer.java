@@ -25,14 +25,14 @@ public class TCPServer extends Thread{
      */
 	protected TCPServer(Agent agent) throws IOException {
 		this.agent = agent;
-		if (Agent.debug) System.out.println("Connection Server created");
+		Agent.printAndLog(String.format("Connection Server created\n"));
 		this.socket = new ServerSocket(Agent.defaultPortNumber);
 		this.start();
 	}
 	
 	@Override
 	public void interrupt() {
-		if (Agent.debug) System.out.println("Connection Server interrupted");
+		Agent.printAndLog(String.format("Connection Server interrupted\n"));
 		try {
 			this.socket.close();
 		} catch (IOException e) {

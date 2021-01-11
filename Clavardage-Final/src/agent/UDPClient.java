@@ -59,7 +59,7 @@ public class UDPClient {
 		} catch (SocketException e) {
         	Agent.errorMessage("ERROR when trying to list all broadcast addresses\n", e);
 		}
-    	if (Agent.debug) System.out.printf("Broadcast Client - Message : %s\n", message);
+    	Agent.printAndLog(String.format("Broadcast Client - Message : %s\n", message));
     	for (InetAddress address : listBroadcastAddresses) {
      		try {
 				broadcast(message, address);
@@ -96,7 +96,7 @@ public class UDPClient {
      */
     public void sendUDP(String udpMessage, InetAddress address){
     	try {
-        	if (Agent.debug) System.out.printf("UDP Client - Message to %s : %s\n", address.toString() , udpMessage);
+    		Agent.printAndLog(String.format("UDP Client - Message to %s : %s\n", address.toString() , udpMessage));
 		  	socket = new DatagramSocket();
 		  	byte[] buffer = udpMessage.getBytes();
 			DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, Agent.broadcastPortNumber);

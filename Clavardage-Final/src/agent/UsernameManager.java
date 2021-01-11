@@ -59,7 +59,7 @@ public class UsernameManager {
 			} catch (InterruptedException e) {} // On attend la réponse des autres utilisateurs
 			ok = this.agent.getNetworkManager().getLastUsernameAvailability();
 			if (fin <= System.currentTimeMillis()) { // Timeout
-				if (Agent.debug) System.out.println("Connection timeout, we consider ourselves as first user");
+				Agent.printAndLog(String.format("Connection timeout, we consider ourselves as first user\n"));
 				ok = true;
 			}
 		} else { // Hors première connexion, on regarde dans notre table locale
@@ -78,7 +78,7 @@ public class UsernameManager {
 		if (!this.agent.isFirstConnection || newUsername.equals(this.agent.getUsername())) { // Not during First Connection
 			try {
 				if (!(oldUsername.equals(newUsername))) {
-					if (Agent.debug) System.out.printf("Username changed in the database : %s -> %s\n",oldUsername,newUsername);
+					Agent.printAndLog(String.format("Username changed in the database : %s -> %s\n",oldUsername,newUsername));
 					// Change username in table users
 					String sql = "UPDATE users SET username = ? "
 			                + "WHERE username = ?";
