@@ -10,13 +10,13 @@ public class Image extends Message {
 
 	private static final long serialVersionUID = 1L;
 	
-	private ImageIcon image;
 	private String filename;
+	private String filepath;
 	
-	public Image(String filename) {
+	public Image(String filepath) {
 		super();
-		this.filename=filename;
-		try {this.image=new ImageIcon(ImageIO.read(new File(filename)));} catch (IOException e) {}
+		this.filename = (new File(filepath)).getName();
+		this.filepath=filepath;
 	}
 	
 	/**
@@ -25,7 +25,8 @@ public class Image extends Message {
 	 * @return Image of the message
 	 */
 	public ImageIcon getImage() {
-		return this.image;
+		try {return new ImageIcon(ImageIO.read(new File(filepath)));} catch (IOException e) {}
+		return null;
 	}
 	
 	/**
@@ -35,6 +36,24 @@ public class Image extends Message {
 	 */
 	public String getFilename() {
 		return this.filename;
+	}
+	
+	/**
+	 * This method returns the filepath of the MyFile
+	 *  
+	 * @return Filepath of the File
+	 */
+	public String getFilepath() {
+		return this.filepath;
+	}
+	
+	/**
+	 * This method modifies the filepath of the MyFile
+	 *  
+	 * @param filepath New filepath of the File
+	 */
+	public void setFilepath(String filepath) {
+		this.filepath=filepath;
 	}
 
 }

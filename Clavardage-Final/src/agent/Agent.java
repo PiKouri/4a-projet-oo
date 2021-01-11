@@ -2,6 +2,8 @@ package agent;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.logging.FileHandler;
@@ -32,15 +34,15 @@ public class Agent{
 	public static String databaseFileName="database.db";
 	/**Logs*/
 	public static Logger logger = Logger.getLogger("MyLog");
+	/**Logs File Handler*/
+	public static FileHandler logfh;
 	
 /*-----------------------Attributs privés-------------------------*/
 	
 	/**Username of the user of this Agent*/
 	protected String username;
 	/**For the first connection*/
-	protected String tempName; 
-	/**IP Address localhost*/
-	protected InetAddress localhost;	
+	protected String tempName; 	
 	/**Our Extern_id (0 if intern, >0 if extern*/
 	protected int extern_id = 0;
 	/**True when first connection (or after reconnection)*/
@@ -72,14 +74,23 @@ public class Agent{
      */
 	public Agent() throws IOException {
 		// Logs
-		FileHandler fh = new FileHandler(Agent.dir+"log.log");  
-        Agent.logger.addHandler(fh);
+        System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tF %1$tT %4$s %5$s%6$s%n");
+        /*LocalDateTime now = LocalDateTime.now();  
+        String logFilename = "log-"+DateTimeFormatter.ofPattern("yyyy.MM.dd-HH.mm.ss").format(now)+".log";*/
+        String logFilename=("log.log");
+		Agent.logfh = new FileHandler(Agent.dir+logFilename,true);  
+        Agent.logger.addHandler(logfh);
         logger.setUseParentHandlers(false);
         SimpleFormatter formatter = new SimpleFormatter();  
-        fh.setFormatter(formatter); 
+        logfh.setFormatter(formatter); 
+        Agent.printAndLog("\n\n\n\n");
+        Agent.printAndLog("----------------Agent was started----------------\n\n\n\n");
+        
+        // Files and images directories
+        Files.createDirectories(Paths.get(Agent.dir+"file/"));
+        Files.createDirectories(Paths.get(Agent.dir+"image/"));
         
 		this.username="";
-		this.localhost=InetAddress.getLocalHost();
 		this.isFirstConnection=true;
 		this.isReconnection=false;
 		this.isDisconnected = false;
@@ -119,7 +130,7 @@ public class Agent{
 				}
 			} else { // First connection
 				this.username = name;
-				databaseManager.addUser(localhost,name,1,this.extern_id);
+				databaseManager.addUser(null,name,1,this.extern_id);
 				isFirstConnection=false;
 				networkManager.sendBroadcast("connect " + username + " " + this.extern_id);
 			}
@@ -289,5 +300,12 @@ public class Agent{
 	public static final void printAndLog(String message) {
 		if (Agent.debug) System.out.printf(message);
 		logger.info(message);
+	}
+	
+	/**
+	 * This methods is used to close the file handler for logs
+	 * */
+	public static final void closeLogs() {
+		logfh.close();
 	}
 }

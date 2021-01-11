@@ -17,6 +17,8 @@ public class DatabaseManager {
 	private Agent agent;
 	/**Connection to the database*/
 	private Connection conn = null;
+	/**True if old database*/
+	private boolean isOld;
 	
 	/**Sql statement used to get elements by address (only used for checking if localhost is in the database)*/
 	protected final String selectByAddress = "SELECT address, username, status, externId "
@@ -75,6 +77,7 @@ public class DatabaseManager {
 		this.agent=agent;
 		createNewDatabase(Agent.databaseFileName);
 		createUsersTable();
+		this.isOld=false;
 		checkOldDatabase();
 	}
 	
@@ -163,22 +166,18 @@ public class DatabaseManager {
      */
 	protected void addUser(InetAddress address, String username, int status, int externId){
 		try {
-			if (this.agent.getNetworkManager().containsAddressAndExternId(address,externId)) {
-				Agent.printAndLog(String.format(
-						"Address %s for user %s already in the database we just change username and status\n",
-						address,username));
-				this.agent.getUsernameManager().userChangeUsername(
-						this.agent.getUsernameManager().getUsername(address,externId),username);
-				this.agent.getUserStatusManager().userChangeStatus(username, status);
-			} else {
+			if (address == null || !this.agent.getNetworkManager().containsAddressAndExternId(address,externId)) {
+				String addressString="";
+				if (address==null&&isOld) return;
+				else if (address==null) addressString="localhost"; // Us
+				else addressString=NetworkManager.addressToString(address);
 				Agent.printAndLog(String.format(
 						"New user %s | address %s | status %d | externId %d added to the database\n",
-						username,this.agent.getNetworkManager().addressToString(address),status,externId));
-				
+						username,addressString,status,externId));
 				// Add info to the users table
 				String sql = "INSERT INTO users(address,username,status,externId) VALUES(?,?,?,?)";
 				PreparedStatement pstmt = conn.prepareStatement(sql);
-		        pstmt.setString(1, this.agent.getNetworkManager().addressToString(address));
+		        pstmt.setString(1, addressString);
 				pstmt.setString(2, username);
 				pstmt.setInt(3, status);
 				pstmt.setInt(4, externId);
@@ -186,7 +185,14 @@ public class DatabaseManager {
 		        if (!username.equals(this.agent.getUsername()))// If the user is not us
 			        // Create one messages table for this user
 			        createMessagesTable(username);
-			}
+			} else {
+				Agent.printAndLog(String.format(
+						"Address %s for user %s already in the database we just change username and status\n",
+						address,username));
+				this.agent.getUsernameManager().userChangeUsername(
+						this.agent.getUsernameManager().getUsername(address,externId),username);
+				this.agent.getUserStatusManager().userChangeStatus(username, status);
+			} 
 		} catch (SQLException e) {
 			Agent.errorMessage(
 					String.format("ERROR when trying to add user %s to the database\n",username), e);
@@ -212,10 +218,11 @@ public class DatabaseManager {
 	private void checkOldDatabase() {
 		try {
 			PreparedStatement pstmt  = this.conn.prepareStatement(selectByAddress);
-			pstmt.setString(1, this.agent.getNetworkManager().addressToString(this.agent.localhost));
+			pstmt.setString(1, "localhost");
 	        ResultSet rs  = pstmt.executeQuery();
 	        if (!rs.isClosed()) {
 	        	Interface.notifyOldUsername(rs.getString("username"));
+	    		this.isOld=true;
 	        }
 		} catch (SQLException e) {
         	Agent.errorMessage("ERROR when trying to check if it is an old database\n", e);

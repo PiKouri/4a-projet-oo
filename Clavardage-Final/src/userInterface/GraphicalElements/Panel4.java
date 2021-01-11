@@ -14,13 +14,22 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -100,6 +109,17 @@ private static final long serialVersionUID = 1L;
 	
 /*-----------------------Méthodes - Utilisées par Interface-------------------------*/
 	
+	public String construireSimpleMessageString(String username, Message msg) {
+		String date = msg.getDate();
+		// Line wrap
+		String thisMsgString="<html>"+date+" - <i>"+username+"</i> : ";
+		if (msg.isText()) thisMsgString += ((Text)msg).getText() + "</html>";
+		else if (msg.isFile()) 
+			thisMsgString += "<u>(Fichier)"+((MyFile)msg).getFilename() + "</u></html>";
+		else if (msg.isImage())
+			thisMsgString += "<u>(Image)"+((Image)msg).getFilename() + "</u></html>";
+		return thisMsgString;
+	}
 	
 	public String construireMessageString(String username, Message msg) {
 		String date = msg.getDate();
@@ -184,28 +204,31 @@ private static final long serialVersionUID = 1L;
 		
 		if (msg.isText()); // Text
 		else if (msg.isImage()) { // Image
-			JLabel img = new JLabel(((Image)msg).getImage());
-			/*img.addMouseListener(new MouseAdapter() {
-	            @Override
-	            public void mouseClicked(MouseEvent e) {enregisterImage(msg);}
-			});*/
-			thisMsg.addMouseListener(new MouseAdapter() {
-	            @Override
-	            public void mouseClicked(MouseEvent e) {enregisterImage(msg);}
-	            public void mouseEntered(MouseEvent e) {
-	            	int x =  MouseInfo.getPointerInfo().getLocation().x; //e.getX();
-	            	int y =  MouseInfo.getPointerInfo().getLocation().y; //e.getY();
-	            	imageFrame.getContentPane().removeAll();
-	            	imageFrame.getContentPane().add(img);
-	            	imageFrame.setLocation(x+10,y+10);
-	            	imageFrame.pack();
-	            	imageFrame.setVisible(true);
-	            }
-	            public void mouseExited(MouseEvent e) {
-	            	imageFrame.setVisible(false);
-	            }
-			});
-			img.setAlignmentX(CENTER_ALIGNMENT);
+			ImageIcon myImg = ((Image)msg).getImage();
+			if (myImg != null) {
+				JLabel img = new JLabel(myImg);
+				/*img.addMouseListener(new MouseAdapter() {
+		            @Override
+		            public void mouseClicked(MouseEvent e) {enregisterImage(msg);}
+				});*/
+				thisMsg.addMouseListener(new MouseAdapter() {
+		            @Override
+		            public void mouseClicked(MouseEvent e) {enregisterImage(msg);}
+		            public void mouseEntered(MouseEvent e) {
+		            	int x =  MouseInfo.getPointerInfo().getLocation().x; //e.getX();
+		            	int y =  MouseInfo.getPointerInfo().getLocation().y; //e.getY();
+		            	imageFrame.getContentPane().removeAll();
+		            	imageFrame.getContentPane().add(img);
+		            	imageFrame.setLocation(x+10,y+10);
+		            	imageFrame.pack();
+		            	imageFrame.setVisible(true);
+		            }
+		            public void mouseExited(MouseEvent e) {
+		            	imageFrame.setVisible(false);
+		            }
+				});
+				img.setAlignmentX(CENTER_ALIGNMENT);
+			}
 		}else if (msg.isFile()) { // File
 			thisMsg.addMouseListener(new MouseAdapter() {
 	            @Override
@@ -236,9 +259,27 @@ private static final long serialVersionUID = 1L;
 		if (userSelection == JFileChooser.APPROVE_OPTION) {
 		    File fileToSave = fileChooser.getSelectedFile();
 		    try {
-				Files.copy(((MyFile)msg).getFile().toPath(),fileToSave.toPath());
+				//Files.copy(((MyFile)msg).getFile().toPath(),fileToSave.toPath());
+				InputStream in = new BufferedInputStream(new FileInputStream(((MyFile)msg).getFile()));
+	    		OutputStream out = new BufferedOutputStream(new FileOutputStream(fileToSave));
+		    	byte[] buffer = new byte[1024];
+		    	int lengthRead;
+		    	while ((lengthRead = in.read(buffer)) > 0) {
+		    		out.write(buffer, 0, lengthRead);
+		    		out.flush();
+		    	}
+		    	in.close();
+		    	out.close();
+				Agent.printAndLog("File saved: "+String.format(fileToSave.getAbsolutePath())+"\n");
 			} catch (IOException e1) {
-				Agent.errorMessage("ERROR Could not save file", e1);
+				StringWriter sw = new StringWriter();
+				e1.printStackTrace(new PrintWriter(sw));
+				String exceptionAsString = sw.toString();
+				Agent.printAndLog(
+						String.format("File could not be saved to %s\n%s\n",
+								fileToSave.toPath(),
+								exceptionAsString));
+				Interface.popUp("Le fichier n'a pas pu être enregistré");
 			}
 		}
 	}
@@ -265,7 +306,15 @@ private static final long serialVersionUID = 1L;
 		        File thisImage = new File(filename);
 		        ImageIO.write(bi, "png", thisImage);
 				Files.copy(thisImage.toPath(),fileToSave.toPath());
-			} catch (IOException e1) {}
+				Agent.printAndLog("Image saved: "+String.format(fileToSave.getAbsolutePath())+"\n");
+			} catch (IOException e1) {
+				StringWriter sw = new StringWriter();
+				e1.printStackTrace(new PrintWriter(sw));
+				String exceptionAsString = sw.toString();
+				Agent.printAndLog(
+						String.format("Image could not be saved : error - %s\n",exceptionAsString));
+				Interface.popUp("L'image n'a pas pu être enregistrée");
+			}
 		}
 	}
 	
@@ -278,14 +327,17 @@ private static final long serialVersionUID = 1L;
 				if( ImageIO.read(new File(filename)) == null) {
 					// Send File
 					msg = (Message) new MyFile(filename);
+					Agent.printAndLog(String.format("Sending file %s to %s\n",filename,destination));
 					Interface.envoyerMessage(destination, msg);
 				} else {
 					// Send Image
 					msg = (Message) new Image(filename);
+					Agent.printAndLog(String.format("Sending image %s to %s\n",filename,destination));
 					Interface.envoyerMessage(destination,msg); 
 				}
 			} else { // Send Text
 				msg = (Message) new Text(text);
+				Agent.printAndLog(String.format("Sending text %s to %s\n",text,destination));
 				Interface.envoyerMessage(destination,msg);
 			}
 			tf.setText("");
@@ -344,12 +396,16 @@ private static final long serialVersionUID = 1L;
         send.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {try {
 				send();
+				revalidate();
+				repaint();
 			} catch (IOException e1) {}}
 		});
         
         tf.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {try {
 				send();
+				revalidate();
+				repaint();
 			} catch (IOException e1) {}}
 		});
         

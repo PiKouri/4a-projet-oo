@@ -136,7 +136,7 @@ public class NetworkManager {
 	protected void tellDisconnectedUsers(InetAddress address) {
 		if (!this.agent.isFirstConnection) {
 			for (String username : this.agent.getUserStatusManager().getDisconnectedUsers()) {
-				String disconnectedAddress = this.agent.getNetworkManager().addressToString(
+				String disconnectedAddress = NetworkManager.addressToString(
 						this.agent.getNetworkManager().getAddress(username));
 				int externId = this.agent.getNetworkManager().getExternId(username);
 				this.udpClient.sendUDP("updateDisconnectedUsers "+ username+" "+disconnectedAddress+" "+externId, address);
@@ -341,7 +341,7 @@ public class NetworkManager {
 		try {
 			PreparedStatement pstmt  = this.agent.getDatabaseManager().getConnection().prepareStatement(
 					this.agent.getDatabaseManager().selectByAddressAndExternId);
-			pstmt.setString(1, this.agent.getNetworkManager().addressToString(address));
+			pstmt.setString(1, NetworkManager.addressToString(address));
 			pstmt.setInt(2, externId);
 	        ResultSet rs  = pstmt.executeQuery();
 	        return !(rs.isClosed());
@@ -362,7 +362,7 @@ public class NetworkManager {
 	 * @param address Address to convert
 	 * @return The address as a String
 	 */
-	public String addressToString(InetAddress address) {
+	public static String addressToString(InetAddress address) {
 		return address.toString().split("/")[1];
 	}
 

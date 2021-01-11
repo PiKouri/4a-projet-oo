@@ -11,7 +11,6 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Objects;
 
 public class UDPServer extends Thread {
 
@@ -32,7 +31,7 @@ public class UDPServer extends Thread {
 	/**Availability of the last username that was checked by the agent*/
 	private boolean lastUsernameAvailability;
 	/**List of all own local addresses*/
-	private List<InetAddress> listAllOwnLocalAddresses = null;
+	private List<String> listAllOwnLocalAddresses = null;
 
 
 	/*-----------------------Méthodes - Gestion des connexions UDP entrantes-------------------------*/
@@ -62,21 +61,17 @@ public class UDPServer extends Thread {
 	 * 
 	 * @return List of all own local addresses
 	 * */
-	private List<InetAddress> listAllOwnLocalAddresses() throws SocketException {
-		List<InetAddress> addressList = new ArrayList<>();
+	private List<String> listAllOwnLocalAddresses() throws SocketException {
+		List<String> addressList = new ArrayList<>();
 		Enumeration<NetworkInterface> interfaces 
 		= NetworkInterface.getNetworkInterfaces();
 		while (interfaces.hasMoreElements()) {
 			NetworkInterface networkInterface = interfaces.nextElement();
-
-			if (networkInterface.isLoopback() || !networkInterface.isUp()) {
-				continue;
-			}
-
-			networkInterface.getInterfaceAddresses().stream() 
-			.map(a -> a.getAddress())
-			.filter(Objects::nonNull)
-			.forEach(addressList::add);
+		    Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
+		    while (addresses.hasMoreElements())
+		    {
+		        addressList.add(NetworkManager.addressToString((InetAddress) addresses.nextElement()));
+		    }
 		}
 		return addressList;
 	}
@@ -102,7 +97,7 @@ public class UDPServer extends Thread {
 
 			InetAddress address = packet.getAddress();
 			// On ignore nos propres messages broadcast
-			if (listAllOwnLocalAddresses.contains(address)) continue;  
+			if (listAllOwnLocalAddresses.contains(NetworkManager.addressToString(address))) continue;  
 
 			int port = packet.getPort();
 			packet = new DatagramPacket(buf, buf.length, address, port);
@@ -110,7 +105,7 @@ public class UDPServer extends Thread {
 			= new String(packet.getData(), 0, packet.getLength());
 			received = received.replaceAll("\0\0", "");
 			received = received.replaceAll("(\0)$", "");
-			Agent.printAndLog(String.format("UDP Server - %s:%d said : %s.\n \n", address.toString(), port , received)); 
+			Agent.printAndLog(String.format("UDP Server - %s:%d said : %s.\n", address.toString(), port , received)); 
 
 			String[] strip = received.split(" ");
 

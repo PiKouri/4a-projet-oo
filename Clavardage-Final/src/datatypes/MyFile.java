@@ -6,13 +6,13 @@ public class MyFile extends Message {
 
 	private static final long serialVersionUID = 1L;
 	
-	private File file;
 	private String filename;
+	private String filepath;
 	
-	public MyFile(String filename) {
+	public MyFile(String filepath) {
 		super();
-		this.file = new File(filename);
-		this.filename = this.file.getName();
+		this.filepath=filepath;
+		this.filename = (new File(filepath)).getName();
 	}
 	
 	/**
@@ -21,16 +21,34 @@ public class MyFile extends Message {
 	 * @return File of the message
 	 */
 	public File getFile() {
-		return this.file;
+		return new File(filepath);
 	}
 	
 	/**
-	 * This method returns the filename of the File
+	 * This method returns the filename of the MyFile
 	 *  
 	 * @return Filename of the File
 	 */
 	public String getFilename() {
 		return this.filename;
+	}
+	
+	/**
+	 * This method returns the filepath of the MyFile
+	 *  
+	 * @return Filepath of the File
+	 */
+	public String getFilepath() {
+		return this.filepath;
+	}
+	
+	/**
+	 * This method modifies the filepath of the MyFile
+	 *  
+	 * @param filepath New filepath of the File
+	 */
+	public void setFilepath(String filepath) {
+		this.filepath=filepath;
 	}
 
 }

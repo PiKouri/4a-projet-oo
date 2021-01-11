@@ -145,7 +145,7 @@ public class Interface {
 		} else {
 			String notif=
 					"<html>L'utilisateur <i>"+username+"</i> vous a envoyé : "+
-			"<p>"+panel4.construireMessageString(username,msg)+"</p></html>";
+			"<p>"+panel4.construireSimpleMessageString(username,msg)+"</p></html>";
 			popUp(notif);
 		}
 	}
@@ -158,6 +158,7 @@ public class Interface {
 	public static void afficherInformationsInterface() {
 		popUp("<html><h>Informations sur l'interface<br>"+
 				" Dans une conversation, les <u>fichiers</u> et <u>images</u> sont cliquables => Enregistrer Sous<br>" + 
+				" Si le <u>fichier</u> ou l'<u>image</u> n'est pas cliquable c'est qu'il a été supprimé du dossier <i>file</i> ou <i>image</i><br>"+
 				" Les images disposent d'un aperçu en mettant la souris sur le message </html>");
 	}
 	
@@ -210,6 +211,7 @@ public class Interface {
 	
 	public static void end() {
 		agent.disconnect();
+		Agent.closeLogs();
 	}
 	
 	

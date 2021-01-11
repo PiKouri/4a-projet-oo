@@ -33,6 +33,7 @@ public class MessageManager {
 	
 /*-----------------------Méthodes - Réception de messages-------------------------*/
 	
+	
 	/**
 	 * This method is used when receiving a Message (File, Text or Image)
 	 * 
@@ -40,6 +41,14 @@ public class MessageManager {
 	 * @param message Message
 	 * */
 	protected void receiveMessage(UserSocket us, Message message) {
+		String header = String.format("Message received from %s : ",us.username);
+		if (message.isFile()) {
+			Agent.printAndLog(header+"file:"+((MyFile)message).getFilename()+"\n");
+			((MyFile) message).setFilepath(Agent.dir+"file/"+us.getAddressAsString()+"/"+((MyFile) message).getFilename());
+		} else if (message.isImage()) { 
+			Agent.printAndLog(header+"image:"+((Image)message).getFilename()+"\n"); 
+			((Image) message).setFilepath(Agent.dir+"image/"+us.getAddressAsString()+"/"+((Image) message).getFilename());			
+		} else if (message.isText()) Agent.printAndLog(header+"text:"+((Text)message).getText()+"\n"); 
 		String username = this.agent.getNetworkManager().socketResolve(us);
 		message.receiving();
 		this.addMessage(this.agent.getNetworkManager().getAddress(username),

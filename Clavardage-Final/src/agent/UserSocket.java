@@ -1,7 +1,12 @@
 package agent;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 
 import datatypes.*;
@@ -70,6 +75,10 @@ public class UserSocket extends Thread {
 		}
 	}
 	
+	public String getAddressAsString() {
+		return NetworkManager.addressToString(socket.getInetAddress());
+	}
+	
 	
 /*-----------------------Méthodes - Réception des messages TCP-------------------------*/
 	
@@ -84,6 +93,17 @@ public class UserSocket extends Thread {
 			try {
 				message=(Message) this.is.readObject();
 				this.agent.getMessageManager().receiveMessage(this,message);
+				if (message.isFile() || message.isImage()) {
+					OutputStream out = null;
+					if (message.isFile()) out = new FileOutputStream(Agent.dir+"file/"+getAddressAsString()+"/"+((MyFile)message).getFilename());
+					else if (message.isImage()) out = new FileOutputStream(Agent.dir+"image/"+getAddressAsString()+"/"+((Image)message).getFilename());
+					byte[] bytes = new byte[16*1024];
+			        int count;
+			        while ((count = this.is.read(bytes)) > 0) {
+			            out.write(bytes, 0, count);
+			        }
+			        out.close();
+				}
 			} catch (Exception e) {}
 		}
 	}
@@ -100,6 +120,18 @@ public class UserSocket extends Thread {
 	public void send(Message message) {
 		try {
 			this.os.writeObject(message);
+			if (message.isFile() || message.isImage()) {
+				File file = null;
+				if (message.isFile()) file = new File(((MyFile)message).getFilepath());
+				else if (message.isImage()) file = new File(((Image)message).getFilepath());
+		        byte[] bytes = new byte[16 * 1024];
+		        InputStream in = new FileInputStream(file);
+		        int count;
+		        while ((count = in.read(bytes)) > 0) {
+		            this.os.write(bytes, 0, count);
+		        }
+		        in.close();
+			}
 		} catch (IOException e) {
         	Agent.errorMessage("ERROR when trying to send TCP message\n", e);
 		}

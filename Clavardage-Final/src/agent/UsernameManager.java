@@ -115,10 +115,11 @@ public class UsernameManager {
 			PreparedStatement pstmt  = 
 					this.agent.getDatabaseManager().getConnection().prepareStatement(
 							this.agent.getDatabaseManager().selectByAddressAndExternId);
-	        pstmt.setString(1,this.agent.getNetworkManager().addressToString(address));
+	        pstmt.setString(1,NetworkManager.addressToString(address));
 	        pstmt.setInt(2, externId);
 	        ResultSet rs  = pstmt.executeQuery();
-	        return rs.getString("username");
+	        if (rs.isClosed()) return "";
+	        else return rs.getString("username");
 		} catch (SQLException e) {
         	Agent.errorMessage(
 					String.format("ERROR when trying to get user from address %s | externId %d in the database\n",address,externId), e);

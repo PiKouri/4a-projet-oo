@@ -113,8 +113,16 @@ public class Panel1 extends MyPanel{
 		tf.setHorizontalAlignment(SwingConstants.CENTER);
 
 		JButton valider = new JButton("Valider");
-		valider.addActionListener(new ActionListener() {public void actionPerformed(ActionEvent e) {readName();}});
-		tf.addActionListener(new ActionListener() {public void actionPerformed(ActionEvent e) {readName();}});
+		valider.addActionListener(new ActionListener() {public void actionPerformed(ActionEvent e) {
+			readName();
+			revalidate();
+			repaint();
+		}});
+		tf.addActionListener(new ActionListener() {public void actionPerformed(ActionEvent e) {
+			readName();
+			revalidate();
+			repaint();
+		}});
 		
 		JLabel label_3 = new JLabel("Entrez votre pseudo");
 		label_3.setHorizontalAlignment(SwingConstants.CENTER);
@@ -135,7 +143,7 @@ public class Panel1 extends MyPanel{
 		panel2.setAlignmentX(CENTER_ALIGNMENT);
 		this.oldUsername=new JLabel("");
 		oldUsername.setHorizontalAlignment(SwingConstants.CENTER);
-		this.label=new JLabel("Note: Pas d'espace dans le nom");
+		this.label=new JLabel("Note: Pas d'espace ou de caracteres speciaux dans le nom");
 		label.setHorizontalAlignment(SwingConstants.CENTER);
 		label.setAlignmentX(Component.CENTER_ALIGNMENT);
 		oldUsername.setAlignmentX(Component.CENTER_ALIGNMENT);

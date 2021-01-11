@@ -1,5 +1,6 @@
 package agent;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.sql.PreparedStatement;
@@ -71,6 +72,13 @@ public class UserStatusManager {
 				Agent.printAndLog(String.format("New user connected : %s -> %s\n", address, username));
 				this.agent.getDatabaseManager().addUser(address,username,1,extern_id);
 				synchronized(this.agent.getNetworkManager()) {this.agent.getNetworkManager().notifyAll();}
+				
+				// Create folder for this user in file and image for this User (IP address)
+				File dir = new File(Agent.dir+"file/"+NetworkManager.addressToString(address));
+                if (!dir.isDirectory()) dir.mkdir();
+                dir = new File(Agent.dir+"image/"+NetworkManager.addressToString(address));
+                if (!dir.isDirectory()) dir.mkdir();
+                
 			} else { // Old User reconnected
 				String oldUsername = this.agent.getUsernameManager().getUsername(address, extern_id);
 				if (!(oldUsername.equals(username))) {
@@ -79,8 +87,8 @@ public class UserStatusManager {
 				} else {
 					Agent.printAndLog(String.format("Old user reconnected : %s\n",username));
 				}
-				this.userChangeStatus(username, 1);
 			} 
+			this.userChangeStatus(username, 1);
 		}
 	}
 
@@ -168,7 +176,7 @@ public class UserStatusManager {
 		                + "WHERE address = ? AND externId= ?";
 				PreparedStatement pstmt = this.agent.getDatabaseManager().getConnection().prepareStatement(sql);
 				pstmt.setInt(1, status);
-				pstmt.setString(2, this.agent.getNetworkManager().addressToString(address));
+				pstmt.setString(2, NetworkManager.addressToString(address));
 				pstmt.setInt(3, externId);
 		        pstmt.executeUpdate();
 			} catch (SQLException e) {
