@@ -20,7 +20,7 @@
 ## Presentation <a name="presentation"></a>
 Partie POO : 
   On peut exporter le projet vers un fichier Runnable Jar en utilisant la classe Interface pour la configuration de lancement  
-  Voir [Runnable/] pour lancer l'application soit en réél (Clavardage.jar) soit en simulation (Docker)
+  Voir [ici](Runnable/) pour lancer l'application soit en réél (Clavardage.jar) soit en simulation (Docker)
 Partie COO : Diagrammes à refaire
 - [x] Diagramme des cas d'utilisation
 - [X] Diagrammes de séquence
