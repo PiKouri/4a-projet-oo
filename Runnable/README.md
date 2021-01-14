@@ -22,3 +22,5 @@
 
 ## Lancement de l'application
 - Exécuter ./preparerdocker.sh && ./multirundocker nombre_de_docker_voulu
+
+## Après avoir utiliser l'application utiliser la commande "sudo xhost" pour des questions de sécurité
