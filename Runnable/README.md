@@ -10,13 +10,15 @@
 - Installer docker et xterm
 - Installer openssh-server : "sudo apt-get install openssh-server"
 - Modifier les fichiers de configuration :
-    - /etc/ssh/ssh_config : décommenter et modifier les lignes : 
+    - /etc/ssh/ssh_config : décommenter et modifier les lignes (sudo): 
         * ForwardAgent yes
         * ForwardX11 yes
         * ForwardX11Trusted yes
-    - /etc/ssh/sshd_config : décommenter et modifier les lignes : 
+    - /etc/ssh/sshd_config : décommenter et modifier les lignes (sudo): 
         * X11Forwarding yes
         * X11UseLocalhost yes
 - Redémarrer la machine
+- Redémarrer les services ssh : "sudo systemctl restart ssh && sudo systemctl restart sshd"
+
 ## Lancement de l'application
 - Exécuter ./preparerdocker.sh && ./multirundocker nombre_de_docker_voulu
