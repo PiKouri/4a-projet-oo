@@ -38,7 +38,6 @@ public class UserSocket extends Thread {
      * 
      * @param agent Agent that created this UserSocket
      * @param socket Socket associated to this UserSocket 
-	 * @throws IOException 
      */
 	public UserSocket(String username, Agent agent, Socket socket){
 		this.username=username;
@@ -51,6 +50,26 @@ public class UserSocket extends Thread {
 		} catch (IOException e) {
         	Agent.errorMessage("ERROR when creating Streams (input or output)\n", e);
 		}
+		this.running = true;
+		this.start();
+	}
+	
+	/**
+     * Constructor for the class UserSocket (only used for extern user)
+     * 
+     * @param agent Agent that created this UserSocket
+     * @param socket Socket associated to this UserSocket 
+     * @param os ObjectOutputStream associated to the presence server socket
+     * @param is ObjectInputStream associated to the presence server socket
+     */
+	@Deprecated
+	public UserSocket(String username, Agent agent, Socket socket, ObjectOutputStream os, ObjectInputStream is){
+		this.username=username;
+		Agent.printAndLog(String.format("UserSocket "+ this.username +" created\n"));
+		this.agent=agent;
+		this.socket=socket;
+		this.os = os;
+		this.is = is;
 		this.running = true;
 		this.start();
 	}
@@ -68,11 +87,13 @@ public class UserSocket extends Thread {
 	public void interrupt(){
 		Agent.printAndLog(String.format("UserSocket "+ this.username +" interrupted\n"));
 		this.running=false;
-		try {
-			this.socket.close();
+		/*try {
+			// We don't stop the Socket of the Presence Server
+			if (!this.socket.equals(this.agent.getNetworkManager().presenceServer))
+				this.socket.close();
 		} catch (IOException e) {
         	Agent.errorMessage("ERROR when calling socket.close()\n", e);
-		}
+		}*/
 	}
 	
 	public String getAddressAsString() {
@@ -119,6 +140,9 @@ public class UserSocket extends Thread {
 	 */
 	public void send(Message message) {
 		try {
+			/*if (this.socket==this.agent.getNetworkManager().presenceServer) {
+				Agent.printAndLog("Sending to Presence Server\n");
+			} */
 			this.os.writeObject(message);
 			if (message.isFile() || message.isImage()) {
 				File file = null;

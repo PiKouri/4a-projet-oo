@@ -21,9 +21,22 @@ public class UDPClient {
     private List<InetAddress> listBroadcastAddresses = null;
     
     
-/*-----------------------Méthodes - Emission UDP-------------------------*/
-  
+/*-----------------------Constructeurs-------------------------*/
     
+    /**
+     * Default constructor for UDPClient : create listBroadcastAddresses
+     * */
+    public UDPClient() {
+    	try {
+			listBroadcastAddresses = listAllBroadcastAddresses();
+		} catch (SocketException e) {
+        	Agent.errorMessage("ERROR when trying to list all broadcast addresses\n", e);
+		}
+    }
+    
+    
+/*-----------------------Méthodes - Emission UDP-------------------------*/
+      
     /**
      * This method lists all the available broadcast addresses      * 
      * @return List of all the available broadcast addresses
@@ -54,11 +67,6 @@ public class UDPClient {
      */
     public void sendBroadcast(String message) {
     	//broadcast("Hello test", InetAddress.getByName("255.255.255.255"));
-    	try {
-			listBroadcastAddresses = listAllBroadcastAddresses();
-		} catch (SocketException e) {
-        	Agent.errorMessage("ERROR when trying to list all broadcast addresses\n", e);
-		}
     	Agent.printAndLog(String.format("Broadcast Client - Message : %s\n", message));
     	for (InetAddress address : listBroadcastAddresses) {
      		try {

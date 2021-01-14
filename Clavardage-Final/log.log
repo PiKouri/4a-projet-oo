@@ -1,6 +1,12 @@
-janv. 11, 2021 8:41:18 PM agent.Agent printAndLog
-INFO: UDP Server created
+2021-01-13 00:10:13 INFO 
 
-janv. 11, 2021 8:41:18 PM agent.Agent printAndLog
-INFO: Connection Server created
+
+
+----------------Agent was started----------------
+
+
+
+
+2021-01-13 00:10:13 INFO We consider ourselves as intern user because we could not contact Presence server at http://127.0.0.18080/Clavardage-Servlet/
+2021-01-13 00:10:13 INFO UDP Server created
 

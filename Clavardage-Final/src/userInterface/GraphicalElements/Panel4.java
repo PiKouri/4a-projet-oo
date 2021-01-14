@@ -338,12 +338,13 @@ private static final long serialVersionUID = 1L;
 			} else { // Send Text
 				msg = (Message) new Text(text);
 				Agent.printAndLog(String.format("Sending text %s to %s\n",text,destination));
-				Interface.envoyerMessage(destination,msg);
+				if (!Interface.envoyerMessage(destination,msg)) return;
 			}
 			tf.setText("");
 			filename="";
 		} else {
 			Interface.popUp("Utilisateur déconnecté, envoi impossible");
+			return;
 		}
 		nouveauMessage(Interface.agent.getUsername(), msg);
 	}

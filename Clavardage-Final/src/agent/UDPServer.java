@@ -42,11 +42,17 @@ public class UDPServer extends Thread {
 	 * <p> This class manages the incoming UDP messages
 	 * 
 	 * @param agent The agent that created this UDPServer
+	 * @throws SocketException 
 	 */
 	protected UDPServer(Agent agent) throws SocketException {
 		Agent.printAndLog(String.format("UDP Server created\n"));
 		this.agent = agent;
-		this.socket = new DatagramSocket(Agent.broadcastPortNumber);
+		try {
+			this.socket = new DatagramSocket(Agent.broadcastPortNumber);
+		} catch (SocketException e1) {
+			this.interrupt();
+			throw e1;
+		}
 		try {
 			listAllOwnLocalAddresses = listAllOwnLocalAddresses();
 		} catch (SocketException e) {
@@ -97,7 +103,8 @@ public class UDPServer extends Thread {
 
 			InetAddress address = packet.getAddress();
 			// On ignore nos propres messages broadcast
-			if (listAllOwnLocalAddresses.contains(NetworkManager.addressToString(address))) continue;  
+			if (listAllOwnLocalAddresses.contains(NetworkManager.addressToString(address)))
+				continue;  
 
 			int port = packet.getPort();
 			packet = new DatagramPacket(buf, buf.length, address, port);
@@ -110,18 +117,35 @@ public class UDPServer extends Thread {
 			String[] strip = received.split(" ");
 
 			String action = strip[0];
-			String username = strip[1];
+			String username ="";
+			if (strip.length>1) username = strip[1];
+			
+			boolean isPresenceServer = this.agent.getNetworkManager().getPresenceServerBroadcastAddresses().contains(
+					NetworkManager.addressToString(address));
 
+			// Ignore presenceServer if could'nt connect at beginning
+			/*if((this.agent.getNetworkManager().presenceServer==null) && (isPresenceServer)) {
+				Agent.printAndLog("UDP Server - message ignored because"
+						+ " it is from Presence Server and we could not connect at beginning\n");
+				continue;
+			}*/
+
+			// If we are extern we check only Presence Server's messages
+			// We check all messages if we are Intern User
+			if (this.agent.isExtern==1 && !isPresenceServer) {
+				Agent.printAndLog(String.format("UDP Server - message ignored (%s) because"
+						+ " it is not from Presence Server and we are extern user\n",NetworkManager.addressToString(address)));
+				continue;
+			}
 			switch (action) {
-
 			case "connect" :
 				if (!this.agent.isFirstConnection) {
-					int externId = Integer.valueOf(strip[2]);
+					int isExtern = Integer.valueOf(strip[2]);
 					this.agent.getNetworkManager().tellCanAccess(address);
-					this.agent.getUserStatusManager().userConnect(username, address, externId);
+					this.agent.getUserStatusManager().userConnect(username, address, isExtern);
 					try {
 						Socket sock = new Socket(address, Agent.defaultPortNumber);
-						this.agent.getNetworkManager().newActiveUserSocket(sock, externId);
+						this.agent.getNetworkManager().newActiveUserSocket(sock);
 					} catch (IOException e) {
 			        	Agent.errorMessage(
 			        			"ERROR Could not create socket when trying to connect\n", e);
@@ -130,7 +154,7 @@ public class UDPServer extends Thread {
 				}
 				break;
 			case "disconnect" :
-				this.agent.getUserStatusManager().userDisconnect(username, address);
+				this.agent.getUserStatusManager().userDisconnect(username);
 				break;
 			case "changeUsername" :
 				String newUsername = strip[2];
@@ -146,8 +170,8 @@ public class UDPServer extends Thread {
 				synchronized(this.agent.getUsernameManager()) {this.agent.getUsernameManager().notifyAll();}
 				break;
 			case "canAccess" : 
-				int externId = Integer.valueOf(strip[2]);
-				this.agent.getUserStatusManager().userConnect(username, address, externId);
+				this.agent.getUserStatusManager().userConnect(username, address, 0);
+				// If we receive canAccess : the user is in the same subnetwork
 				break;
 			case "updateDisconnectedUsers" :
 				String disconnectedAddress = strip[2];
@@ -161,11 +185,34 @@ public class UDPServer extends Thread {
 							String.format("ERROR UnknowHost : %s.\n", disconnectedAddress), e);
 				}
 				break;
+			case "presenceServerShutdown" :
+				Agent.printAndLog("Presence Server Shutdown : considering intern now\n");
+				//this.agent.getNetworkManager().presenceServer=null;
+				this.agent.getUserStatusManager().putAllExternUsersDisconnected();
+				break;
+			case "presenceServerNotifyConnection":
+				if (!this.agent.isFirstConnection) {
+					// Presence server sends : presenceServerNotifyConnection username isExtern address
+					int isExtern = Integer.valueOf(strip[2]);
+					// Condition = 
+					// Presence server is sending extern user info
+					// OR Presence server is sending user info and we are extern user
+					boolean condition = (isExtern!=0 || this.agent.isExtern!=0);
+					// If the address of new user is in our own local address we change status
+					if (!condition) continue;
+					else {
+						address=InetAddress.getByName(strip[3]);
+						this.agent.getNetworkManager().newExternUserConnected(address, username);
+					}
+				}
+				break;
 			default :
 				System.out.printf("ERROR reading packet \n %s \n", received);
-			}
+			}}
 			//System.out.printf("Local IP of this packet was: %s.\n",getOutboundAddress(packet.getSocketAddress()).getHostAddress());
-		}} catch (IOException e) {}
+		}catch (IOException e) {
+			Agent.printAndLog("UDPServer - IOException\n");
+		}
 	}
 
 	/**
@@ -174,4 +221,5 @@ public class UDPServer extends Thread {
 	 * @return True if the last username that was checked by the agent is available
 	 */
 	protected boolean getLastUsernameAvailability() {return this.lastUsernameAvailability;}
+
 }

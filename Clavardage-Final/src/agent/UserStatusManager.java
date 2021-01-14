@@ -38,11 +38,11 @@ public class UserStatusManager {
 	 * 
 	 * @param username The disconnected user
 	 * @param address Address of the disconnected user
-	 * @param extern_id Extern_id of the disconnected user (0 if intern user)
+	 * @param isExtern True if extern user
 	 * */
-	protected void updateDisconnectedUsers(String username, InetAddress address, int extern_id) {
-		if (!this.agent.getNetworkManager().containsAddressAndExternId(address,extern_id)) { // Si l'addresse n'est pas déjà connue, on l'ajoute
-			this.agent.getDatabaseManager().addUser(address,username,0,extern_id);
+	protected void updateDisconnectedUsers(String username, InetAddress address, int isExtern) {
+		if (!this.agent.getNetworkManager().containsAddress(address)) { // Si l'addresse n'est pas déjà connue, on l'ajoute
+			this.agent.getDatabaseManager().addUser(address,username,0,isExtern);
 		}
 	}
 
@@ -50,9 +50,8 @@ public class UserStatusManager {
 	 * This method sets the status of a user to disconnected when receiving a "disconnect" message
 	 *  
 	 * @param username Username of the user who disconnected
-	 * @param address Address of the user who disconnected
 	 */
-	protected void userDisconnect(String username, InetAddress address) throws IOException { 
+	protected void userDisconnect(String username) throws IOException { 
 		if (!this.agent.isFirstConnection) {
 			this.agent.getNetworkManager().removeSocket(username);
 			this.userChangeStatus(username, 0);
@@ -64,13 +63,13 @@ public class UserStatusManager {
 	 *  
 	 * @param username Username of the user who connected
 	 * @param address Address of the user who connected
-	 * @param extern_id Extern_id of the user who connected (0 if intern user)
+	 * @param isExtern True if extern user
 	 */
-	protected void userConnect(String username, InetAddress address, int extern_id) { 
+	protected void userConnect(String username, InetAddress address, int isExtern) { 
 		if (!this.agent.isFirstConnection) {
-			if (!this.agent.getNetworkManager().containsAddressAndExternId(address, extern_id)) { // New address+extern_id
+			if (!this.agent.getNetworkManager().containsAddress(address)) { // New address+extern_id
 				Agent.printAndLog(String.format("New user connected : %s -> %s\n", address, username));
-				this.agent.getDatabaseManager().addUser(address,username,1,extern_id);
+				this.agent.getDatabaseManager().addUser(address,username,1,isExtern);
 				synchronized(this.agent.getNetworkManager()) {this.agent.getNetworkManager().notifyAll();}
 				
 				// Create folder for this user in file and image for this User (IP address)
@@ -80,7 +79,7 @@ public class UserStatusManager {
                 if (!dir.isDirectory()) dir.mkdir();
                 
 			} else { // Old User reconnected
-				String oldUsername = this.agent.getUsernameManager().getUsername(address, extern_id);
+				String oldUsername = this.agent.getUsernameManager().getUsername(address);
 				if (!(oldUsername.equals(username))) {
 					Agent.printAndLog(String.format("Old user reconnected : %s -> %s\n",oldUsername, username));
 					this.agent.getUsernameManager().userChangeUsername(oldUsername, username);
@@ -160,6 +159,21 @@ public class UserStatusManager {
 	}
 	
 	/**
+	 * This method puts all extern active users as disconnected
+	 * <p>Note that this method is used the presence server is shutdown
+	 */
+	protected void putAllExternUsersDisconnected() {
+		try {
+			Agent.printAndLog(String.format("Putting all extern users as disconnected\n"));
+			String sql = "UPDATE users SET status = 0 WHERE status = 1 AND isExtern = 1";
+			PreparedStatement pstmt = this.agent.getDatabaseManager().getConnection().prepareStatement(sql);
+	        pstmt.executeUpdate();
+		} catch (Exception e) {
+        	Agent.errorMessage("ERROR when trying to put all extern users as disconnected in table users in the database\n", e);
+		}
+	}
+	
+	/**
      * This method changers the status of a user in the database
      * 
      * @param username
@@ -170,14 +184,12 @@ public class UserStatusManager {
 			try {
 				Agent.printAndLog(String.format("User status changed in the database : %s -> %d\n",username,status));
 				InetAddress address = this.agent.getNetworkManager().getAddress(username);
-				int externId = this.agent.getNetworkManager().getExternId(username);
 				// Change username in table users
 				String sql = "UPDATE users SET status = ? "
-		                + "WHERE address = ? AND externId= ?";
+		                + "WHERE address = ?";
 				PreparedStatement pstmt = this.agent.getDatabaseManager().getConnection().prepareStatement(sql);
 				pstmt.setInt(1, status);
 				pstmt.setString(2, NetworkManager.addressToString(address));
-				pstmt.setInt(3, externId);
 		        pstmt.executeUpdate();
 			} catch (SQLException e) {
 				Agent.errorMessage(

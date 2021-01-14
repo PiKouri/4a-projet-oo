@@ -51,8 +51,7 @@ public class MessageManager {
 		} else if (message.isText()) Agent.printAndLog(header+"text:"+((Text)message).getText()+"\n"); 
 		String username = this.agent.getNetworkManager().socketResolve(us);
 		message.receiving();
-		this.addMessage(this.agent.getNetworkManager().getAddress(username),
-				this.agent.getNetworkManager().getExternId(username), message);
+		this.addMessage(this.agent.getNetworkManager().getAddress(username), message);
 		Interface.notifyNewMessage(username,message);
 	}
 	
@@ -61,24 +60,44 @@ public class MessageManager {
 	 * 
 	 * @param dest Destination user
 	 * @param message Message
+	 * 
+	 * @return true if the message could be sent
 	 * */
-	protected void sendMessage(String username, Message message) {
-		this.addMessage(this.agent.getNetworkManager().getAddress(username),
-				this.agent.getNetworkManager().getExternId(username), message);
+	protected boolean sendMessage(String username, Message message) {
+		message.setDestination(NetworkManager.addressToString(
+				this.agent.getNetworkManager().getAddress(username)));
+		
+		// ExternUser and Could not connect to Presence Server
+//		if (this.agent.getNetworkManager().presenceServer==null && 
+//				((this.agent.getNetworkManager().isExtern(username)==1)
+//						|| this.agent.isExtern==1)) {
+//			Interface.popUp("Utilisateur externe et impossible de se connecter au serveur de présence, envoi impossible");
+//			return false;
+//		}
+		
+//		<!>----- Can't send messages to extern users -----<!>
+		
+		if ((this.agent.getNetworkManager().isExtern(username)==1)
+						|| this.agent.isExtern==1) {
+			Interface.popUp("Utilisateur externe envoi impossible");
+			return false;
+		}
+		
+		this.addMessage(this.agent.getNetworkManager().getAddress(username), message);
 		UserSocket us = this.agent.getNetworkManager().getSocket(username);
 		us.send(message);
+		return true;
 	}
 	
 	/**
      * Add a message to the messages list from a user in the database
      *
      * @param address IP Address of the user
-     * @param externId Extern id of the user
      * @param message Message we want to add
      */
-	protected void addMessage(InetAddress address, int externId, Message message){
+	protected void addMessage(InetAddress address, Message message){
 		try {
-			String username = this.agent.getUsernameManager().getUsername(address, externId);
+			String username = this.agent.getUsernameManager().getUsername(address);
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		    ObjectOutputStream oos = new ObjectOutputStream(baos);
 		    oos.writeObject(message);

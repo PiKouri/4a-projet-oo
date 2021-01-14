@@ -18,35 +18,31 @@ public class DatabaseManager {
 	/**Connection to the database*/
 	private Connection conn = null;
 	/**True if old database*/
-	private boolean isOld;
+	protected boolean isOld;
 	
 	/**Sql statement used to get elements by address (only used for checking if localhost is in the database)*/
-	protected final String selectByAddress = "SELECT address, username, status, externId "
+	protected final String selectByAddress = "SELECT address, username, status, isExtern "
             + "FROM users WHERE address = ?";
 	
-	/**Sql statement used to get elements by address and extern id*/
-	protected final String selectByAddressAndExternId = "SELECT address, username, status, externId "
-            + "FROM users WHERE address = ? AND externId = ?";
-	
 	/**Sql statement used to get elements by name*/
-	protected final String selectByName = "SELECT address, username, status, externId "
+	protected final String selectByName = "SELECT address, username, status, isExtern "
             + "FROM users WHERE username = ?";
 	
 	/**Sql statement used to get all the elements in table users*/
-	protected final String selectAll = "SELECT address, username, status, externId FROM users ";
+	protected final String selectAll = "SELECT address, username, status, isExtern FROM users ";
 	
 	/**Sql statement used to get all the connected users in table users*/
-	protected final String selectConnected = "SELECT address, username, status, externId FROM users WHERE status = 1";
+	protected final String selectConnected = "SELECT address, username, status, isExtern FROM users WHERE status = 1";
 	
 	/**Sql statement used to get all the disconnected users in table users*/
-	protected final String selectDisconnected = "SELECT address, username, status, externId FROM users WHERE status = 0";
+	protected final String selectDisconnected = "SELECT address, username, status, isExtern FROM users WHERE status = 0";
 /*
  * Database table users :
  * id
  * address
  * username
  * status (0=disconnected or 1=connected)
- * externId (0=intern users or >0 for extern users)
+ * isExtern (0=intern users or 1 for extern users)
  * 
  * example : 
  * 123
@@ -123,7 +119,7 @@ public class DatabaseManager {
 	                + " address text,\n"
 	                + "	username text,\n"
 	                + " status integer,\n"
-	                + " externId integer"
+	                + " isExtern integer"
 	                + ");";
 			stmt.execute(sql);
 		} catch (SQLException e) {
@@ -162,25 +158,25 @@ public class DatabaseManager {
      * @param address Address of the user we add
      * @param username Username of the user we add
      * @param status Int representing the status of the user we add (0=disconnected, 1=connected)
-     * @param externId Extern id of the user we add (0 if intern user)
+     * @param isExtern True if extern user
      */
-	protected void addUser(InetAddress address, String username, int status, int externId){
+	protected void addUser(InetAddress address, String username, int status, int isExtern){
 		try {
-			if (address == null || !this.agent.getNetworkManager().containsAddressAndExternId(address,externId)) {
+			if ((address==null && !this.agent.getNetworkManager().containsAddress(null)) || !this.agent.getNetworkManager().containsAddress(address)) {
 				String addressString="";
 				if (address==null&&isOld) return;
 				else if (address==null) addressString="localhost"; // Us
 				else addressString=NetworkManager.addressToString(address);
 				Agent.printAndLog(String.format(
-						"New user %s | address %s | status %d | externId %d added to the database\n",
-						username,addressString,status,externId));
+						"New user %s | address %s | status %d | isExtern %d added to the database\n",
+						username,addressString,status,isExtern));
 				// Add info to the users table
-				String sql = "INSERT INTO users(address,username,status,externId) VALUES(?,?,?,?)";
+				String sql = "INSERT INTO users(address,username,status,isExtern) VALUES(?,?,?,?)";
 				PreparedStatement pstmt = conn.prepareStatement(sql);
 		        pstmt.setString(1, addressString);
 				pstmt.setString(2, username);
 				pstmt.setInt(3, status);
-				pstmt.setInt(4, externId);
+				pstmt.setInt(4, isExtern);
 		        pstmt.executeUpdate();
 		        if (!username.equals(this.agent.getUsername()))// If the user is not us
 			        // Create one messages table for this user
@@ -188,9 +184,9 @@ public class DatabaseManager {
 			} else {
 				Agent.printAndLog(String.format(
 						"Address %s for user %s already in the database we just change username and status\n",
-						address,username));
+						NetworkManager.addressToString(address),username));
 				this.agent.getUsernameManager().userChangeUsername(
-						this.agent.getUsernameManager().getUsername(address,externId),username);
+						this.agent.getUsernameManager().getUsername(address),username);
 				this.agent.getUserStatusManager().userChangeStatus(username, status);
 			} 
 		} catch (SQLException e) {
@@ -235,7 +231,7 @@ public class DatabaseManager {
      */
 	/*protected void getOldInformations() {
 		try {
-			String sql = "SELECT address,username,status,externId FROM users";
+			String sql = "SELECT address,username,status,isExtern FROM users";
 			Statement stmt = conn.createStatement();
 	        ResultSet rs    = stmt.executeQuery(sql);
 	        // loop through the result set

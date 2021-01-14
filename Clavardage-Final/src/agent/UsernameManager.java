@@ -53,15 +53,21 @@ public class UsernameManager {
 		
 		if (this.agent.isFirstConnection) { // Première connexion
 			// On vérifie la disponibilité du nom auprès des autres utilisateurs
-			this.agent.getNetworkManager().sendBroadcast("checkUsernameAvailability "+username);			
-			try {
-				synchronized(this) {this.wait(Agent.timeout);}
-			} catch (InterruptedException e) {} // On attend la réponse des autres utilisateurs
-			ok = this.agent.getNetworkManager().getLastUsernameAvailability();
-			if (fin <= System.currentTimeMillis()) { // Timeout
-				Agent.printAndLog(String.format("Connection timeout, we consider ourselves as first user\n"));
-				ok = true;
-			}
+			// Intern Users => POST Request to the Presence Server or broadcast if could not connect
+			// Extern Users => POST Request to the Presence Server
+			String response = this.agent.getNetworkManager().sendPost("checkUsernameAvailability",username).trim();
+			if (response.isEmpty() && this.agent.isExtern==0) {
+				this.agent.getNetworkManager().sendBroadcast("checkUsernameAvailability "+username);
+				try {
+					synchronized(this) {this.wait(Agent.timeout);}
+				} catch (InterruptedException e) {} // On attend la réponse des autres utilisateurs
+				ok = this.agent.getNetworkManager().getLastUsernameAvailability();
+				if (fin <= System.currentTimeMillis()) { // Timeout
+					Agent.printAndLog(String.format("Connection timeout, we consider ourselves as first user\n"));
+					ok = true;
+				}
+			} else 
+				ok = Boolean.parseBoolean(response);
 		} else { // Hors première connexion, on regarde dans notre table locale
 			ok = !(this.containsUsername(username));
 		}
@@ -106,23 +112,22 @@ public class UsernameManager {
      * Get username by address from the database
      *
      * @param address IP Address of the user
-     * @param externId Extern id of the user we add (0 if intern user)
      * 
      * @return User object containing the username and the address
      */
-	protected String getUsername(InetAddress address, int externId) {
+	protected String getUsername(InetAddress address) {
 		try {
 			PreparedStatement pstmt  = 
 					this.agent.getDatabaseManager().getConnection().prepareStatement(
-							this.agent.getDatabaseManager().selectByAddressAndExternId);
-	        pstmt.setString(1,NetworkManager.addressToString(address));
-	        pstmt.setInt(2, externId);
+							this.agent.getDatabaseManager().selectByAddress);
+			if (address==null) pstmt.setString(1, "localhost");
+			else pstmt.setString(1, NetworkManager.addressToString(address));
 	        ResultSet rs  = pstmt.executeQuery();
 	        if (rs.isClosed()) return "";
 	        else return rs.getString("username");
 		} catch (SQLException e) {
         	Agent.errorMessage(
-					String.format("ERROR when trying to get user from address %s | externId %d in the database\n",address,externId), e);
+					String.format("ERROR when trying to get user from address %s in the database\n",address), e);
 		}
         return null; // Pas accessible
 	}

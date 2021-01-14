@@ -22,11 +22,17 @@ public class TCPServer extends Thread{
      * <p>This class manages the incoming TCP connections
      * 
      * @param agent The agent that created this TCPServer
+	 * @throws IOException 
      */
-	protected TCPServer(Agent agent) throws IOException {
+	protected TCPServer(Agent agent) throws Throwable{
 		this.agent = agent;
 		Agent.printAndLog(String.format("Connection Server created\n"));
-		this.socket = new ServerSocket(Agent.defaultPortNumber);
+		try {
+			this.socket = new ServerSocket(Agent.defaultPortNumber);
+		} catch (Throwable e1) {
+			this.interrupt();
+			throw e1;
+		}
 		this.start();
 	}
 	
@@ -34,7 +40,8 @@ public class TCPServer extends Thread{
 	public void interrupt() {
 		Agent.printAndLog(String.format("Connection Server interrupted\n"));
 		try {
-			this.socket.close();
+			if (this.socket!=null)
+				this.socket.close();
 		} catch (IOException e) {
         	Agent.errorMessage("ERROR in socket.close()\n", e);
 		}
@@ -56,7 +63,7 @@ public class TCPServer extends Thread{
 		while (true) {
 			Socket link;
 			link = this.socket.accept();
-			this.agent.getNetworkManager().newActiveUserSocket(link,0);
+			this.agent.getNetworkManager().newActiveUserSocket(link);
 		}
 	}
 

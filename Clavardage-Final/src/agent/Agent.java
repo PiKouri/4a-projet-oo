@@ -1,7 +1,7 @@
 package agent;
 
+import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -29,13 +29,15 @@ public class Agent{
 	/**Current directory*/
 	public static final String dir = System.getProperty("user.dir")+"/";
 	/**Presence Server IP address*/
-	public static InetAddress presenceServerIPAddress;
+	public static String presenceServerIPAddress;
 	/**Database Name*/
 	public static String databaseFileName="database.db";
 	/**Logs*/
 	public static Logger logger = Logger.getLogger("MyLog");
 	/**Logs File Handler*/
 	public static FileHandler logfh;
+	/**Log file name*/
+	public static String logFileName="log.log";
 	
 /*-----------------------Attributs privés-------------------------*/
 	
@@ -43,14 +45,14 @@ public class Agent{
 	protected String username;
 	/**For the first connection*/
 	protected String tempName; 	
-	/**Our Extern_id (0 if intern, >0 if extern*/
-	protected int extern_id = 0;
+	/** 1 if extern (not in the subnet of the Presence Server) & 0 if intern */
+	protected int isExtern = 0;
 	/**True when first connection (or after reconnection)*/
 	protected boolean isFirstConnection;
 	/**True when reconnection (or after reconnection)*/
 	protected boolean isReconnection;
 	/**True when disconnected*/
-	protected boolean isDisconnected;
+	protected boolean isDisconnected;	
 	
 	/**UsernameManager associated to this agent*/
 	private UsernameManager usernameManager;
@@ -72,31 +74,54 @@ public class Agent{
      * 
      * @param me Object User representing the actual user
      */
-	public Agent() throws IOException {
+	public Agent() {
 		// Logs
         System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tF %1$tT %4$s %5$s%6$s%n");
         /*LocalDateTime now = LocalDateTime.now();  
         String logFilename = "log-"+DateTimeFormatter.ofPattern("yyyy.MM.dd-HH.mm.ss").format(now)+".log";*/
-        String logFilename=("log.log");
-		Agent.logfh = new FileHandler(Agent.dir+logFilename,true);  
+        try {
+			Agent.logfh = new FileHandler(Agent.dir+Agent.logFileName,true);
+		} catch (Exception e) {
+			Agent.errorMessage(String.format(
+					"Could not create log file at %s",Agent.dir+logFileName),e);
+		} 
         Agent.logger.addHandler(logfh);
         logger.setUseParentHandlers(false);
         SimpleFormatter formatter = new SimpleFormatter();  
         logfh.setFormatter(formatter); 
-        Agent.printAndLog("\n\n\n\n");
-        Agent.printAndLog("----------------Agent was started----------------\n\n\n\n");
+        Agent.printAndLog("\n\n\n\n----------------Agent was started----------------\n\n\n\n");
         
         // Files and images directories
-        Files.createDirectories(Paths.get(Agent.dir+"file/"));
-        Files.createDirectories(Paths.get(Agent.dir+"image/"));
+        try {
+			Files.createDirectories(Paths.get(Agent.dir+"file/"));
+	        Files.createDirectories(Paths.get(Agent.dir+"image/"));
+		} catch (IOException e) {
+			Agent.errorMessage(String.format(
+					"Could not create folders file and image at %s",Agent.dir),e);
+		}
         
 		this.username="";
 		this.isFirstConnection=true;
 		this.isReconnection=false;
 		this.isDisconnected = false;
 
-		this.networkManager = new NetworkManager(this);
 		this.databaseManager = new DatabaseManager(this);
+		try {
+			this.networkManager = new NetworkManager(this);
+		} catch (Throwable t) {
+			Interface.notifyAnotherInstanceIsRunning();
+			synchronized(Interface.sync) {
+				try {Interface.sync.wait();} catch (InterruptedException e1) {}
+			}
+			/*Remove duplicate logs*/
+			Agent.closeLogs();
+			(new File(Agent.dir+Agent.logFileName+".1")).delete();
+			Agent.logfh = null;
+			Agent.logger = null;
+			Agent.errorMessage("Une autre instance de l'application est en cours"
+					+ " d'éxecution, réessayer après avoir fermer l'autre instance",
+			new Exception(t));
+		}
 		this.usernameManager = new UsernameManager(this);
 		this.messageManager = new MessageManager(this);
 		this.userStatusManager = new UserStatusManager(this);
@@ -123,16 +148,26 @@ public class Agent{
 		if (ok) {
 			if (!this.isFirstConnection) { // Not first connection
 				if (!this.username.equals(name)) {
-					this.networkManager.sendBroadcast("changeUsername "+ this.username + " " + name);
+					// Intern Users => Broadcast + POST Request
+					// Extern Users => POST Request to the Presence Server
+					if (this.isExtern==0)
+						this.networkManager.sendBroadcast("changeUsername "+ this.username + " " + name);
+					this.networkManager.sendPost("changeUsername",name);
 					String oldUsername = this.username;
 					this.username = name;
 					this.usernameManager.userChangeUsername(oldUsername, name);
 				}
 			} else { // First connection
 				this.username = name;
-				databaseManager.addUser(null,name,1,this.extern_id);
+				databaseManager.addUser(null,name,1,this.isExtern);
 				isFirstConnection=false;
-				networkManager.sendBroadcast("connect " + username + " " + this.extern_id);
+				// Intern Users => Broadcast + POST Request
+				// Extern Users => POST Request to the Presence Server
+				if (this.isExtern==0) 
+					networkManager.sendBroadcast("connect " + username + " "+ isExtern);
+				String response = networkManager.sendPost("connect",username);
+				if (!(response.trim().isEmpty()))
+					this.networkManager.fromExternList(response);
 			}
 			Interface.notifyUsernameAvailable();
 			if (this.isReconnection)this.isReconnection=false;
@@ -187,9 +222,11 @@ public class Agent{
      * 
      * @param dest Destination user (as String)
      * @param message Message that the user wants to send
+     * 
+     * @return True if the message could be sent
      */
-	public void sendMessage(String dest, Message message) {
-		this.messageManager.sendMessage(dest,message);
+	public boolean sendMessage(String dest, Message message) {
+		return this.messageManager.sendMessage(dest,message);
 	}
 	
 	/**
@@ -200,7 +237,11 @@ public class Agent{
      */
 	public void disconnect() {
 		if (!this.isFirstConnection && !this.isDisconnected) {
-			this.networkManager.sendBroadcast("disconnect " + this.username);
+			// Intern Users => Broadcast + POST Request
+			// Extern Users => POST Request to the Presence Server
+			if (this.isExtern==0)
+				this.networkManager.sendBroadcast("disconnect " + this.username);
+			this.networkManager.sendPost("disconnect",this.username);				
 			this.networkManager.stopAll();
 			//on met tous les utilisateurs comme déconnectés lorsque l'on se déconnecte
 			this.userStatusManager.putAllUsersDisconnected();
@@ -214,8 +255,9 @@ public class Agent{
      * (he/she can re-use his/her old username)
      * <br>It will send a "connect" broadcast message to notify other users
      * <br>UDP Message template : "connect username"
+	 * @throws Throwable 
      */
-	public void reconnect() throws IOException {
+	public void reconnect() throws Throwable {
 		if (this.isDisconnected) {
 			this.isFirstConnection=true;
 			this.isReconnection=true;
@@ -287,8 +329,11 @@ public class Agent{
 		System.out.printf(s);
 		System.out.println(e.getMessage());
 		e.printStackTrace();
-		logger.info(s);
-		logger.log(Level.INFO,e.getMessage(),e);
+		if (logger!=null) {
+			logger.info(s);
+			logger.log(Level.INFO,e.getMessage(),e);
+			logfh.close();
+		}
         System.exit(-1);
 	}
 	

@@ -1,7 +1,4 @@
 package userInterface;
-import java.awt.AWTException;
-import java.awt.HeadlessException;
-import java.io.IOException;
 
 import javax.swing.JOptionPane;
 
@@ -29,6 +26,9 @@ public class Interface {
 	public static Panel4 panel4;
 	
 	public static boolean isDisconnected = true;
+	
+	/**To handle JVM BindException*/
+	public static Object sync = new Object(); 
 	
 	
 /**
@@ -70,7 +70,10 @@ public class Interface {
 			public MyThread() {}
 			public void run() {
 				JOptionPane.showMessageDialog(Interface.mainWindow, message);
+				synchronized(Interface.sync) {
+					Interface.sync.notifyAll();
 				}
+			}
 		}
 		(new MyThread()).start();
 	}
@@ -150,6 +153,11 @@ public class Interface {
 		}
 	}
 	
+	public static void notifyAnotherInstanceIsRunning() {
+		popUp("<html><p>Une autre instance de l'application est en cours"
+				+ " d'éxecution, réessayer après avoir fermer l'autre instance</p></html>");
+	}
+	
 	
 /*-----------------------Méthodes - Boutons des menus bar-------------------------*/
 	
@@ -185,7 +193,7 @@ public class Interface {
 		panel1.displayOldUsername(agent.getUsername());
 		switchPanel(from, panel1);
 		isDisconnected=false;
-		try {agent.reconnect();} catch (IOException e) {}
+		try {agent.reconnect();} catch (Throwable e) {}
 		from.update();
 	}	
 	
@@ -205,8 +213,8 @@ public class Interface {
 		panel4.update();
 	}
 	
-	public static void envoyerMessage(String dest, Message message) {
-		agent.sendMessage(dest, message);
+	public static boolean envoyerMessage(String dest, Message message) {
+		return agent.sendMessage(dest, message);
 	}
 	
 	public static void end() {
@@ -231,14 +239,18 @@ public class Interface {
 /*-----------------------Méthodes - Main = Lancement de l'Interface-------------------------*/
 	
 	
-	public static void main(String[] args) throws IOException, InterruptedException, HeadlessException, AWTException {
-		propertiesReader.getProperties();
-		panel1=new Panel1();
-		panel2=new Panel2();
-		panel3=new Panel3();
-		panel4=new Panel4();
-		mainWindow=new MyFrame();
-		agent = new Agent();
+	public static void main(String[] args) {
+		try {
+			propertiesReader.getProperties();
+			panel1=new Panel1();
+			panel2=new Panel2();
+			panel3=new Panel3();
+			panel4=new Panel4();
+			mainWindow=new MyFrame();
+			agent = new Agent();
+		} catch (Throwable t){
+			Agent.errorMessage("Erreur\n",new Exception(t));
+		}
 	}
 
 }
