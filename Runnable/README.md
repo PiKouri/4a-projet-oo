@@ -10,11 +10,11 @@
 - Installer docker et xterm
 - Installer openssh-server : "sudo apt-get install openssh-server"
 - Modifier les fichiers de configuration :
-    * /etc/ssh/ssh_config : décommenter et modifier les lignes : 
+    - /etc/ssh/ssh_config : décommenter et modifier les lignes : 
         * ForwardAgent yes
         * ForwardX11 yes
         * ForwardX11Trusted yes
-    * /etc/ssh/sshd_config : décommenter et modifier les lignes : 
+    - /etc/ssh/sshd_config : décommenter et modifier les lignes : 
         * X11Forwarding yes
         * X11UseLocalhost yes
 - Redémarrer la machine
