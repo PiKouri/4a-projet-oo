@@ -21,6 +21,23 @@
 Partie POO : <br>
   On peut exporter le projet vers un fichier Runnable Jar en utilisant la classe Interface pour la configuration de lancement<br>
   Voir [ici](Runnable/) pour lancer l'application soit en réél (Clavardage.jar) soit en simulation (Docker) <br><br>
+  L'application Clavardage.jar est fonctionnelle :  <br>
+  * En serveur local :
+      - [X] Connexion, Déconnexion, Changement de pseudo
+      - [X] Affichage des utilisateurs connectés / déconnectés
+      - [X] Affichage de l'historique des messages (stockage dans un fichier local database.db)
+      - [X] Envoi de message : Text, Image, Fichier
+      - [X] Configuration de l'application avec le fichier config.properties
+      - [X] Journal de log sauvegardé dans le fichier log.log
+  * Avec le serveur de présence :
+      - [X] Connexion, Déconnexion, Changement de pseudo
+      - [X] Affichage des utilisateurs connectés / déconnectés
+      - [ ] Affichage de l'historique des messages (stockage dans un fichier local database.db)
+      - [ ] Envoi de message : Text, Image, Fichier
+      - [X] Configuration de l'application avec le fichier config.properties
+      - [X] Journal de log sauvegardé dans le fichier log.log
+      - [X] Servlet : Journal de log et autres informations disponibles en accédant au serveur tomcat via web (GET request)
+      - A noter : l'affichage de l'historique et l'envoi de message est disponible mais seulement sur le serveur local, envoi vers un utilisateur externe impossible
 Partie COO : Diagrammes à refaire
 - [x] Diagramme des cas d'utilisation
 - [X] Diagrammes de séquence
