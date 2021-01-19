@@ -38,6 +38,7 @@ Partie POO : <br>
       - [X] Journal de log sauvegardé dans le fichier log.log
       - [X] Servlet : Journal de log et autres informations disponibles en accédant au serveur tomcat via web (GET request)
       - A noter : l'affichage de l'historique et l'envoi de message est disponible mais seulement sur le serveur local, envoi vers un utilisateur externe impossible
+      <br>
 Partie COO : Diagrammes à refaire
 - [x] Diagramme des cas d'utilisation
 - [X] Diagrammes de séquence
