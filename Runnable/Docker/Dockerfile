@@ -17,5 +17,5 @@ MAINTAINER Clavardage
 COPY Clavardage.jar /home/Clavardage.jar
 COPY ChatMignon.jpg /home/ChatMignon.jpg
 COPY Pangolin.jpg /home/Pangolin.jpg
-COPY config.properties /config.properties
-CMD java -jar /home/Clavardage.jar && bash
+COPY config.properties /home/config.properties
+CMD cd home && java -jar Clavardage.jar && bash
