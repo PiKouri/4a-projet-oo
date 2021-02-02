@@ -74,5 +74,7 @@ Partie COO : Diagrammes à refaire
 ![userInterface Diagramme de Classe](https://github.com/PiKouri/4a-projet-oo/blob/main/img/Nouveaux%20Diagrammes/Class/userInterface%20Class%20Diagram.png)
   * Package datatypes
 ![datatypes Diagramme de Classe](https://github.com/PiKouri/4a-projet-oo/blob/main/img/Nouveaux%20Diagrammes/Class/datatypes%20Class%20Diagram.png)
+  * Servlet (Serveur de présence)
+![servlet Diagramme de Classe](https://github.com/PiKouri/4a-projet-oo/blob/main/img/Nouveaux%20Diagrammes/Class/servlet%20Class%20Diagram.png)
 ### Diagramme de structure composite <a name="newComposite"></a>
 ### Diagramme de machines à états <a name="newState"></a>
