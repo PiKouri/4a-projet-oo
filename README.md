@@ -6,11 +6,12 @@
   * HOK Jean-Rémy  
 ## Sommaire
 1. [Présentation](#presentation)
-2. [Anciens diagrammes](#oldDiagrams)
+2. [Démonstrations (vidéos)](#demonstration)
+3. [Anciens diagrammes](#oldDiagrams)
     1. [Diagramme des cas d'utilisation](#oldUseCase)
     2. [Diagrammes de séquence](#oldSequence)
     3. [Diagramme de classe](#oldClass)
-3. [Nouveaux diagrammes](#newDiagrams)
+4. [Nouveaux diagrammes](#newDiagrams)
     1. [Diagramme de classe](#newClass)
         1. [Légende des icônes pour les diagrammes de classe](#objectAIDLegend)
         2. [Résumé](#newClassSummary)
@@ -45,6 +46,15 @@ Partie COO : Diagrammes à refaire
 - [X] Diagramme de classe
 - [ ] Diagramme de structure composite]
 - [ ] Diagramme de machines à états
+## Démonstrations (vidéos) <a name="demonstration"></a>
+Voici trois vidéos de démonstration de l’utilisation de notre application.
+  * Premier cas, utilisation dans un réseau local : https://youtu.be/Ojc-RVkksYk
+  * Second cas, utilisation du serveur de présence : https://youtu.be/KS4yV88tEgw
+
+Schémas réseau correspondant <br>
+![Schéma réseau](https://github.com/PiKouri/4a-projet-oo/blob/main/img/image_2021-04-08_134626.png)<br>
+RT = routeur, mais le routage est direct : câble réseau virtuel entre la machine virtuelle VM et l’hôte.
+  * Autres fonctionnalités : https://youtu.be/YL51-GbzIHA
 ## Anciens Diagrammes <a name="oldDiagrams"></a>
 ### Diagramme des cas d'utilisation <a name="oldUseCase"></a>
 ![Ancien Diagramme des cas d'utilisation](https://github.com/PiKouri/4a-projet-oo/blob/main/img/UseCase%20Diagram.png)
